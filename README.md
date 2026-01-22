@@ -1,7 +1,7 @@
 Cross-Border Payment Intelligence Platform (MVP)
 
-Overview
-
+**Overview
+**
 This project is an early-stage fintech prototype focused on improving cross-border money transfers between Africa and abroad, starting with a single pilot corridor.
 
 
@@ -10,13 +10,13 @@ The platform does not replace existing remittance providers. Instead, it acts as
 
 
 
-Problem
+**Problem**
 
 Sending money to and from Sub-Saharan Africa is expensive, unreliable, and confusing.
 
 
 
-Key issues:
+**Key issues:**
 
 
 
@@ -32,7 +32,7 @@ Failed transfers with unclear explanations
 
 High reliance on cash handling
 
-Solution
+**Solution**
 
 This platform introduces an intelligent routing and local settlement approach:
 
@@ -54,27 +54,27 @@ The platform does not hold user funds and operates in partnership with licensed 
 
 
 
-MVP Scope (Fixed)
-
+MVP Scope (Fixed)**
+**
 Pilot corridor:
 
 
 
 Tanzania ↔ South Korea
 
-Target users:
+**Target users:**
 
 
 
 Individuals (students, diaspora, families)
 
-Transfer types:
+**Transfer types:**
 
 
 
 Mobile money → Bank / Wallet
 
-Out of scope (for MVP):
+**Out of scope (for MVP):**
 
 
 
@@ -86,7 +86,7 @@ Crypto
 
 Physical cash pickup
 
-What This MVP Includes
+**What This MVP Includes**
 
 Transfer setup flow
 
@@ -108,13 +108,13 @@ Custody of funds
 
 Production-scale compliance automation
 
-Project Status
+**Project Status**
 
 This is an early prototype intended for:
 
 
 
-Concept validation
+**Concept validation**
 
 Grant and accelerator applications
 
