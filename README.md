@@ -2,6 +2,7 @@ Cross-Border Payment Intelligence Platform (MVP)
 
 **Overview
 **
+
 This project is an early-stage fintech prototype focused on improving cross-border money transfers between Africa and abroad, starting with a single pilot corridor.
 
 
