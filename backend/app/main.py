@@ -3,7 +3,10 @@ from app.core.config import APP_NAME
 from app.db.database import Base, engine
 from app.api.v1.router import api_router
 
-# Create DB tables (MVP)
+from app.models.user import User  # noqa
+from app.models.kyc import KYCProfile  # noqa
+from app.models.transfer import Transfer  # noqa
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=APP_NAME)
