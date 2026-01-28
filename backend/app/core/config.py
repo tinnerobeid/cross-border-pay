@@ -1,10 +1,13 @@
-import os
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
 
-load_dotenv()
+class Settings(BaseSettings):
+    APP_NAME: str = "Nuru API"
+    DATABASE_URL: str = "postgresql+psycopg2://postgres:tina@localhost:5432/nuru"
 
-APP_NAME = os.getenv("APP_NAME", "Nuru Pay API")
-DB_URL = os.getenv("DB_URL")
+    JWT_SECRET_KEY: str = "change-me-in-prod"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24h
 
-if not DB_URL:
-    raise RuntimeError("DB_URL is missing. Create backend/.env and set DB_URL.")
+    STORAGE_ROOT: str = "./storage"
+
+settings = Settings()
