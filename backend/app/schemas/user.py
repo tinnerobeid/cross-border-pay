@@ -1,9 +1,10 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 
-class UserCreate(BaseModel):
+class UserOut(BaseModel):
+    id: int
     email: EmailStr
-    password: str = Field(..., min_length=8)
+    full_name: str
+    role: str
+    is_active: bool
 
-class TokenOut(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+    model_config = {"from_attributes": True}
