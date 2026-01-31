@@ -14,10 +14,17 @@ class Transfer(Base):
     send_currency: Mapped[str] = mapped_column(String(10), nullable=False)
     receive_currency: Mapped[str] = mapped_column(String(10), nullable=False)
 
+    # method used to send funds (bank, cash, mobile, etc.)
+    send_method: Mapped[str] = mapped_column(String(50), default="bank", nullable=False)
+    # method used to receive funds (bank, cash, mobile, etc.)
+    receive_method: Mapped[str] = mapped_column(String(50), default="bank", nullable=False)
     send_amount: Mapped[float] = mapped_column(Float, nullable=False)
     fx_rate: Mapped[float] = mapped_column(Float, nullable=False)
     fee_amount: Mapped[float] = mapped_column(Float, nullable=False)
     receive_amount: Mapped[float] = mapped_column(Float, nullable=False)
+
+    # estimated time for settlement/delivery in minutes
+    estimated_minutes: Mapped[int] = mapped_column(nullable=False, default=0)
 
     provider: Mapped[str] = mapped_column(String(50), default="internal")  # mock routing output
     status: Mapped[str] = mapped_column(String(20), default="initiated")   # lifecycle

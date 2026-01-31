@@ -24,3 +24,8 @@ app.include_router(admin_router)
 @app.get("/")
 def health():
     return {"status": "ok", "app": settings.APP_NAME}
+ 
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
