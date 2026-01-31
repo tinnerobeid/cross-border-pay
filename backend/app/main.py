@@ -11,7 +11,7 @@ from app.api.admin import router as admin_router
 from app.models import user, kyc, transfer  # noqa: F401
 
 # Create DB tables
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine, checkfirst=True)
 
 app = FastAPI(title=settings.APP_NAME)
 

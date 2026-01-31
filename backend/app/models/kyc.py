@@ -6,7 +6,7 @@ from app.db.database import Base
 class KYCProfile(Base):
     __tablename__ = "kyc_profiles"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False)
 
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|approved|rejected
