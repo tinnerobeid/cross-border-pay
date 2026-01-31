@@ -10,11 +10,23 @@ from app.api.admin import router as admin_router
 
 from app.models import user, kyc, transfer  # noqa: F401
 
-# Create DB tables
-Base.metadata.create_all(bind=engine, checkfirst=True)
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title=settings.APP_NAME)
 
+# Add CORS middleware BEFORE routes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for dev; restrict in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Create DB tables
+Base.metadata.create_all(bind=engine, checkfirst=True)
+
+# Include routers
 app.include_router(auth_router)
 app.include_router(kyc_router)
 app.include_router(quote_router)
@@ -24,7 +36,6 @@ app.include_router(admin_router)
 @app.get("/")
 def health():
     return {"status": "ok", "app": settings.APP_NAME}
- 
 
 @app.get("/health")
 def health_check():
