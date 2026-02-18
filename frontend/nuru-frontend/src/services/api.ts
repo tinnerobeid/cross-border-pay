@@ -7,9 +7,17 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Automatically attach JWT token if present
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+export function getErrorMessage(err: any): string {
+  return (
+    err?.response?.data?.detail ||
+    err?.response?.data?.message ||
+    err?.message ||
+    "Something went wrong"
+  );
+}
