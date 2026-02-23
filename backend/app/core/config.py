@@ -1,8 +1,8 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Nuru API"
-    DATABASE_URL: str = "postgresql+psycopg2://postgres:tina@localhost:5432/nuru"
+    APP_NAME: str = "Zuripay API"
+    DATABASE_URL: str = "postgresql+psycopg2://postgres:tina@localhost:5432/zuripay"
 
     JWT_SECRET_KEY: str = "change-me-in-prod"
     JWT_ALGORITHM: str = "HS256"

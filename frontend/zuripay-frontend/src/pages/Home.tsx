@@ -18,7 +18,7 @@ export default function Home() {
 
   return (
     <div style={{ padding: 24 }}>
-      <h1>Nuru</h1>
+      <h1>ZuriPay</h1>
       <p><b>Backend health:</b> {status}</p>
       {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
