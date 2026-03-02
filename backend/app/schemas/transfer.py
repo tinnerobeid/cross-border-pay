@@ -27,3 +27,6 @@ class TransferOut(BaseModel):
 class TransferStatusUpdate(BaseModel):
     status: str
     failure_reason: str | None = None
+    
+class TransferCreateFromQuote(BaseModel):
+    quote_id: int

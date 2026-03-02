@@ -1,38 +1,38 @@
-from sqlalchemy import String, DateTime, ForeignKey, Float
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey
+from sqlalchemy.sql import func
 from app.db.database import Base
 
 class Transfer(Base):
     __tablename__ = "transfers"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
-    send_country: Mapped[str] = mapped_column(String(100), nullable=False)
-    receive_country: Mapped[str] = mapped_column(String(100), nullable=False)
-    send_currency: Mapped[str] = mapped_column(String(10), nullable=False)
-    receive_currency: Mapped[str] = mapped_column(String(10), nullable=False)
+    send_amount = Column(Numeric(18, 2), nullable=False)
+    send_currency = Column(String(3), nullable=False)
+    send_country = Column(String(50), nullable=True)
 
-    # method used to send funds (bank, cash, mobile, etc.)
-    send_method: Mapped[str] = mapped_column(String(50), default="bank", nullable=False)
-    # method used to receive funds (bank, cash, mobile, etc.)
-    receive_method: Mapped[str] = mapped_column(String(50), default="bank", nullable=False)
-    send_amount: Mapped[float] = mapped_column(Float, nullable=False)
-    fx_rate: Mapped[float] = mapped_column(Float, nullable=False)
-    fee_amount: Mapped[float] = mapped_column(Float, nullable=False)
-    receive_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    receive_currency = Column(String(3), nullable=False)
+    receive_country = Column(String(50), nullable=True)
+    receive_amount = Column(Numeric(18, 2), nullable=True)
 
-    # estimated time for settlement/delivery in minutes
-    estimated_minutes: Mapped[int] = mapped_column(nullable=False, default=0)
+    recipient_name = Column(String(255), nullable=False)
+    recipient_phone = Column(String(50), nullable=False)
 
-    provider: Mapped[str] = mapped_column(String(50), default="internal")  # mock routing output
-    status: Mapped[str] = mapped_column(String(20), default="initiated")   # lifecycle
+    provider = Column(String(50), nullable=False, default="mock")
 
-    failure_reason: Mapped[str] = mapped_column(String(500), nullable=True)
+    # ✅ pricing snapshot (locked)
+    rate_used = Column(Numeric(18, 8), nullable=True)
+    fee_used = Column(Numeric(18, 2), nullable=True)
+    total_payable = Column(Numeric(18, 2), nullable=True)
+    priced_at = Column(DateTime(timezone=False), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # ✅ state machine
+    status = Column(String(30), nullable=False, default="CREATED")
+    fail_reason = Column(String(255), nullable=True)
 
-    user = relationship("User", back_populates="transfers")
+    # ✅ provider tracking
+    provider_reference = Column(String(100), nullable=True)
 
+    created_at = Column(DateTime(timezone=False), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=False), server_default=func.now(), onupdate=func.now(), nullable=False)

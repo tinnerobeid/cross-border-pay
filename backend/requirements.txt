@@ -6,3 +6,5 @@ pydantic-settings==2.6.1
 python-multipart==0.0.20
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
+celery==5.4.0
+redis==5.0.8

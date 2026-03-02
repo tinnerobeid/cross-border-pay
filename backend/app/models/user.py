@@ -16,3 +16,4 @@ class User(Base):
 
     kyc_profile = relationship("KYCProfile", back_populates="user", uselist=False)
     transfers = relationship("Transfer", back_populates="user")
+    quotes = relationship("Quote", back_populates="user")

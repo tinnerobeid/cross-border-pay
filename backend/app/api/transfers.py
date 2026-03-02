@@ -10,6 +10,8 @@ from app.models.transfer import Transfer
 from app.schemas.transfer import TransferCreate, TransferOut
 from app.services.pricing_service import mock_fx_rate, mock_fee, quote
 from app.services.routing_service import choose_provider
+from app.tasks.transfer_tasks import process_single_transfer
+
 
 router = APIRouter(prefix="/transfers", tags=["Transfers"])
 

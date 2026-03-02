@@ -1,76 +1,52 @@
-from __future__ import annotations
-
 from decimal import Decimal
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
 
-from app.core.config import settings
-from app.services.fx_provider_exchangerate_host import ExchangeRateHostProvider
-from app.services.pricing import PricingService
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="", tags=["Quote"])  # keep your style/prefix if you already have one
+from app.db.database import get_db
+from app.api.deps import get_current_user
+from app.models.user import User
+from app.models.quote import Quote
+from app.schemas.quote import QuoteRequest, QuoteResponse
+from app.services.pricing_engine import PricingEngine
 
-# Create singletons (simple MVP)
-fx_provider = ExchangeRateHostProvider(
-    api_key=settings.EXCHANGERATE_HOST_API_KEY,
-    cache_ttl_seconds=30,
-)
+router = APIRouter(prefix="/quote", tags=["Quote"])
 
-pricing = PricingService(
-    fx_provider=fx_provider,
-    quote_ttl_seconds=120,
-    fixed_fee=Decimal("1000"),
-    percent_fee=Decimal("0.008"),
-    min_fee=Decimal("1000"),
-    max_fee=Decimal("15000"),
-)
+engine = PricingEngine(quote_ttl_seconds=60)
 
 
-class QuoteRequest(BaseModel):
-    send_amount: Decimal
-    send_currency: str
-    receive_currency: str
-
-
-@router.get("/fx/rate")
-async def fx_rate(
-    base: str = Query(..., min_length=3, max_length=3),
-    quote: str = Query(..., min_length=3, max_length=3),
+@router.post("", response_model=QuoteResponse)
+def create_quote(
+    payload: QuoteRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    try:
-        live = await fx_provider.get_rate(base, quote)
-        return {
-            "base": live.base,
-            "quote": live.quote,
-            "rate": str(live.rate),
-            "provider": live.provider,
-            "fetched_at": live.fetched_at.isoformat(),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
+    send_amount = Decimal(str(payload.send_amount))
+    result = engine.price(
+        send_amount=send_amount,
+        send_currency=payload.send_currency,
+        receive_currency=payload.receive_currency,
+        send_country=payload.send_country,
+        receive_country=payload.receive_country,
+    )
 
+    q = Quote(
+        user_id=user.id,
+        send_country=payload.send_country,
+        receive_country=payload.receive_country,
+        send_currency=payload.send_currency,
+        receive_currency=payload.receive_currency,
+        send_amount=float(send_amount),
+        fx_rate=float(result.fx_rate),
+        fee_amount=float(result.fee_amount),
+        receive_amount=float(result.receive_amount),
+        total_cost=float(result.total_cost),
+        status="PENDING",
+        expires_at=result.expires_at,
+    )
 
-@router.post("/quote")
-async def create_quote(payload: QuoteRequest):
-    try:
-        q = await pricing.quote(
-            send_amount=payload.send_amount,
-            send_currency=payload.send_currency,
-            receive_currency=payload.receive_currency,
-        )
-        return {
-            "send_amount": str(q.send_amount),
-            "send_currency": q.send_currency,
-            "receive_currency": q.receive_currency,
-            "rate_used": str(q.rate_used),
-            "receive_amount": str(q.receive_amount),
-            "fee_used": str(q.fee_used),
-            "total_payable": str(q.total_payable),
-            "provider": q.provider,
-            "priced_at": q.priced_at.isoformat(),
-            "expires_at": q.expires_at.isoformat(),
-        }
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
+    db.add(q)
+    db.commit()
+    db.refresh(q)
+
+    return q

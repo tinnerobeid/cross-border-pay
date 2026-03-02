@@ -14,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title=settings.APP_NAME)
 
+app.include_router(auth_router)
+
 # Add CORS middleware BEFORE routes
 app.add_middleware(
     CORSMiddleware,
