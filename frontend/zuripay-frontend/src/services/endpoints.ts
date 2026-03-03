@@ -8,6 +8,6 @@ export const ENDPOINTS = {
 
   QUOTE: "/quote",
 
-  KYC_UPLOAD: "/kyc/upload",
-  KYC_STATUS: "/kyc/status",
+  KYC_GET: "/kyc",
+  KYC_SUBMIT: "/kyc/submit",
 };

@@ -7,10 +7,11 @@ export default function CreateTransfer() {
   const [form, setForm] = useState<TransferCreate>({
     send_country: "Tanzania",
     receive_country: "South Korea",
-    send_method: "mobile_money",
-    receive_method: "bank",
-    amount: 10000,
-    currency: "TZS",
+    send_currency: "TZS",
+    receive_currency: "KRW",
+    send_amount: 100000,
+    recipient_name: "",
+    recipient_phone: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -41,33 +42,38 @@ export default function CreateTransfer() {
 
       <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
         <label>
-          Send country
+          Send Country
           <input value={form.send_country} onChange={(e) => update("send_country", e.target.value)} />
         </label>
 
         <label>
-          Receive country
+          Receive Country
           <input value={form.receive_country} onChange={(e) => update("receive_country", e.target.value)} />
         </label>
 
         <label>
-          Send method
-          <input value={form.send_method} onChange={(e) => update("send_method", e.target.value)} placeholder="mobile_money" />
+          Send Currency
+          <input value={form.send_currency} onChange={(e) => update("send_currency", e.target.value)} placeholder="TZS" />
         </label>
 
         <label>
-          Receive method
-          <input value={form.receive_method} onChange={(e) => update("receive_method", e.target.value)} placeholder="bank" />
+          Receive Currency
+          <input value={form.receive_currency} onChange={(e) => update("receive_currency", e.target.value)} placeholder="KRW" />
         </label>
 
         <label>
-          Amount
-          <input type="number" value={form.amount} onChange={(e) => update("amount", Number(e.target.value))} />
+          Amount (in send currency)
+          <input type="number" value={form.send_amount} onChange={(e) => update("send_amount", Number(e.target.value))} />
         </label>
 
         <label>
-          Currency
-          <input value={form.currency} onChange={(e) => update("currency", e.target.value)} placeholder="TZS / KRW" />
+          Recipient Name
+          <input value={form.recipient_name} onChange={(e) => update("recipient_name", e.target.value)} placeholder="Full name" required />
+        </label>
+
+        <label>
+          Recipient Phone
+          <input value={form.recipient_phone} onChange={(e) => update("recipient_phone", e.target.value)} placeholder="+234..." required />
         </label>
 
         <button disabled={loading} type="submit">

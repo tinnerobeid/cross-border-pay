@@ -10,7 +10,8 @@ from app.models.transfer import Transfer
 from app.schemas.transfer import TransferCreate, TransferOut
 from app.services.pricing_service import mock_fx_rate, mock_fee, quote
 from app.services.routing_service import choose_provider
-from app.tasks.transfer_tasks import process_single_transfer
+from app.tasks.transfer_tasks import process_transfer
+from app.core.logger import logger
 
 
 router = APIRouter(prefix="/transfers", tags=["Transfers"])
@@ -46,6 +47,11 @@ def create_transfer(payload: TransferCreate, db: Session = Depends(get_db), user
     db.add(t)
     db.commit()
     db.refresh(t)
+    # enqueue async processing (best-effort)
+    try:
+        process_transfer.apply_async(args=[t.id])
+    except Exception as _e:
+        logger.warning(f"Could not enqueue transfer processing task: {_e}")
     return t
 
 @router.get("", response_model=list[TransferOut])

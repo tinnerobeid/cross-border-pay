@@ -1,15 +1,17 @@
 export interface QuoteRequest {
   send_country: string;
   receive_country: string;
-  amount: number;
-  currency: string;
+  send_amount: number;
+  send_currency: string;
+  receive_currency: string;
 }
 
 export interface QuoteResponse {
-  provider?: string;
-  fee?: number;
-  fx_rate?: number;
-  payout_amount?: number;
-  eta_minutes?: number;
-  raw?: any; // fallback if backend returns different shape
+  id: number;
+  fx_rate: number;
+  fee_amount: number;
+  receive_amount: number;
+  total_cost: number;
+  status: string;
+  expires_at: string;
 }

@@ -1,6 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from app.core.config import settings
 from app.db.database import Base, engine
+import logging
 
 from app.api.auth import router as auth_router
 from app.api.kyc import router as kyc_router
@@ -12,7 +15,35 @@ from app.models import user, kyc, transfer  # noqa: F401
 
 from fastapi.middleware.cors import CORSMiddleware
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title=settings.APP_NAME)
+
+# Global exception handler for validation errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error on {request.url.path}: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Validation error",
+            "errors": exc.errors()
+        },
+    )
+
+# Global exception handler for general exceptions
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error on {request.url.path}: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 app.include_router(auth_router)
 

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from backend.app.core.celery_app import celery_app
+from app.core.celery_app import celery_app
 from app.db.database import SessionLocal
 from app.models.transfer import Transfer
 from app.models.kyc import KYCProfile  # adjust import name to your actual model file/class

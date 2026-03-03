@@ -12,6 +12,7 @@ class QuoteRequest(BaseModel):
 
 class QuoteResponse(BaseModel):
     id: int
+    send_amount: float
     fx_rate: float
     fee_amount: float
     receive_amount: float

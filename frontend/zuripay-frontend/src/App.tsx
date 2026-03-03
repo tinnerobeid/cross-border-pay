@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from "react-router-dom";
 
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import CreateTransfer from "./pages/CreateTransfer";
 import Transfers from "./pages/Transfers";
 import Quote from "./pages/Quote";
@@ -19,6 +20,7 @@ function NavBar() {
   return (
     <div style={{ padding: 12, borderBottom: "1px solid #ddd", display: "flex", gap: 12 }}>
       <Link to="/login">Login</Link>
+      <Link to="/register">Sign Up</Link>
       <Link to="/transfer/new">Create Transfer</Link>
       <Link to="/transfers">Transfers</Link>
       <Link to="/quote">Quote</Link>
@@ -40,6 +42,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
 
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/transfer/new" element={<CreateTransfer />} />
         <Route path="/transfers" element={<Transfers />} />
         <Route path="/quote" element={<Quote />} />

@@ -45,7 +45,8 @@ export default function Transfers() {
               <th>From</th>
               <th>To</th>
               <th>Amount</th>
-              <th>Currency</th>
+              <th>Recipient</th>
+              <th>Provider</th>
             </tr>
           </thead>
           <tbody>
@@ -53,10 +54,11 @@ export default function Transfers() {
               <tr key={t.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
                 <td>{t.id}</td>
                 <td>{t.status}</td>
-                <td>{t.send_country} ({t.send_method})</td>
-                <td>{t.receive_country} ({t.receive_method})</td>
-                <td>{t.amount}</td>
-                <td>{t.currency}</td>
+                <td>{t.send_country} ({t.send_currency})</td>
+                <td>{t.receive_country} ({t.receive_currency})</td>
+                <td>{t.send_amount}</td>
+                <td>{t.recipient_name}</td>
+                <td>{t.provider}</td>
               </tr>
             ))}
           </tbody>

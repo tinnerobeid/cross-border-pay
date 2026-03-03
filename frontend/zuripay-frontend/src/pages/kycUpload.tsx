@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { uploadKycDocument, getKycStatus } from "../services/kycService";
+import { submitKyc, getKycStatus } from "../services/kycService";
 import { getErrorMessage } from "../services/api";
 
 export default function KycUpload() {
-  const [file, setFile] = useState<File | null>(null);
+  const [country, setCountry] = useState("Tanzania");
+  const [idType, setIdType] = useState("passport");
+  const [idNumber, setIdNumber] = useState("");
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [idFrontFile, setIdFrontFile] = useState<File | null>(null);
+  const [idBackFile, setIdBackFile] = useState<File | null>(null);
+  
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -21,9 +27,11 @@ export default function KycUpload() {
     refreshStatus();
   }, []);
 
-  async function onUpload() {
-    if (!file) {
-      setMsg("❌ Please choose a file first.");
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    
+    if (!selfieFile || !idFrontFile) {
+      setMsg("❌ Please upload at least selfie and ID front.");
       return;
     }
 
@@ -31,10 +39,17 @@ export default function KycUpload() {
     setMsg(null);
 
     try {
-      const res = await uploadKycDocument(file);
-      setMsg("✅ Uploaded successfully");
+      const res = await submitKyc(
+        country,
+        idType,
+        idNumber,
+        selfieFile,
+        idFrontFile,
+        idBackFile || undefined
+      );
+      setMsg("✅ KYC submitted successfully");
       await refreshStatus();
-      console.log("upload response:", res);
+      console.log("submit response:", res);
     } catch (e: any) {
       setMsg(`❌ ${getErrorMessage(e)}`);
     } finally {
@@ -51,25 +66,52 @@ export default function KycUpload() {
       </div>
 
       {status && (
-        <pre style={{ background: "#f7f7f7", padding: 12, overflowX: "auto" }}>
-          {JSON.stringify(status, null, 2)}
-        </pre>
+        <div style={{ background: "#f7f7f7", padding: 12, marginBottom: 16, borderRadius: 4 }}>
+          <h4>Current Status</h4>
+          <pre style={{ overflowX: "auto", margin: 0 }}>
+            {JSON.stringify(status, null, 2)}
+          </pre>
+        </div>
       )}
 
-      <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-        <button onClick={onUpload} disabled={loading || !file}>
-          {loading ? "Uploading..." : "Upload Document"}
+      <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
+        <label>
+          Country
+          <input value={country} onChange={(e) => setCountry(e.target.value)} />
+        </label>
+
+        <label>
+          ID Type
+          <input value={idType} onChange={(e) => setIdType(e.target.value)} placeholder="passport, driver_license, etc." />
+        </label>
+
+        <label>
+          ID Number
+          <input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+        </label>
+
+        <label>
+          Selfie (required)
+          <input type="file" onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)} />
+        </label>
+
+        <label>
+          ID Front (required)
+          <input type="file" onChange={(e) => setIdFrontFile(e.target.files?.[0] ?? null)} />
+        </label>
+
+        <label>
+          ID Back (optional)
+          <input type="file" onChange={(e) => setIdBackFile(e.target.files?.[0] ?? null)} />
+        </label>
+
+        <button disabled={loading} type="submit">
+          {loading ? "Submitting..." : "Submit KYC"}
         </button>
-      </div>
+      </form>
 
       {msg && <p style={{ marginTop: 12 }}>{msg}</p>}
-      <p style={{ marginTop: 14, fontSize: 12, opacity: 0.8 }}>
-        This uses <code>multipart/form-data</code>. If your backend expects a different field name than <code>file</code>, tell me and I’ll adjust.
-      </p>
+
     </div>
   );
 }
