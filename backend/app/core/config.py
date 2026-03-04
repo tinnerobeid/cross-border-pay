@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     )
 
     APP_NAME: str = "Zuripay API"
-    # Default to SQLite for MVP; can switch to PostgreSQL
-    DATABASE_URL: str = "sqlite:///./zuripay.db"
+    # PostgreSQL connection string
+    DATABASE_URL: str = "postgresql+psycopg2://zuripay:zuripay@localhost:5432/zuripay"
 
     JWT_SECRET_KEY: str = "change-me-in-prod-use-strong-random-key"
     JWT_ALGORITHM: str = "HS256"

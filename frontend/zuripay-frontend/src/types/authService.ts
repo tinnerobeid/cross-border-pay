@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api } from "../services/api";
 import type { LoginRequest, RegisterRequest, TokenResponse } from "../types/auth";
 
 export async function login(payload: LoginRequest) {

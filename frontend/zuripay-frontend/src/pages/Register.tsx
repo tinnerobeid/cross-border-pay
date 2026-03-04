@@ -31,7 +31,7 @@ export default function Register() {
     }
 
     try {
-      const data = await register({
+      await register({
         email,
         password,
         full_name: fullName,

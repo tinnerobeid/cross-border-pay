@@ -6,12 +6,13 @@ export default function SendMoney() {
   const [form, setForm] = useState<TransferCreate>({
     send_country: "Tanzania",
     receive_country: "South Korea",
-    send_method: "mobile_money",
-    receive_method: "bank",
-    amount: 10000,
-    currency: "TZS",
+    send_currency: "TZS",
+    receive_currency: "KRW",
+    send_amount: 10000,
     recipient_name: "",
     recipient_phone: "",
+    send_method: "mobile_money",
+    receive_method: "bank",
   });
 
   const [loading, setLoading] = useState(false);
@@ -86,19 +87,27 @@ export default function SendMoney() {
         </label>
 
         <label>
-          Amount
+          Send Currency
           <input
-            type="number"
-            value={form.amount}
-            onChange={(e) => update("amount", Number(e.target.value))}
+            value={form.send_currency}
+            onChange={(e) => update("send_currency", e.target.value)}
           />
         </label>
 
         <label>
-          Currency
+          Receive Currency
           <input
-            value={form.currency}
-            onChange={(e) => update("currency", e.target.value)}
+            value={form.receive_currency}
+            onChange={(e) => update("receive_currency", e.target.value)}
+          />
+        </label>
+
+        <label>
+          Send Amount
+          <input
+            type="number"
+            value={form.send_amount}
+            onChange={(e) => update("send_amount", Number(e.target.value))}
           />
         </label>
 

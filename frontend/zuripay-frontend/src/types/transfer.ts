@@ -6,6 +6,8 @@ export interface TransferCreate {
   send_currency: string;
   receive_currency: string;
   send_amount: number;
+  send_method?: string;
+  receive_method?: string;
   recipient_name: string;
   recipient_phone: string;
 }

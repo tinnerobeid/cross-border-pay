@@ -8,10 +8,12 @@ export interface QuoteRequest {
 
 export interface QuoteResponse {
   id: number;
+  send_amount: number;
   fx_rate: number;
   fee_amount: number;
   receive_amount: number;
   total_cost: number;
   status: string;
   expires_at: string;
+  raw?: any;
 }

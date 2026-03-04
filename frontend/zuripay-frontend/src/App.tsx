@@ -5,7 +5,7 @@ import Register from "./pages/Register";
 import CreateTransfer from "./pages/CreateTransfer";
 import Transfers from "./pages/Transfers";
 import Quote from "./pages/Quote";
-import KycUpload from "./pages/KycUpload";
+import KycUpload from "./pages/kycUpload";
 
 function NavBar() {
   const nav = useNavigate();

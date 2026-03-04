@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api } from "../services/api";
 import type { Transfer, TransferCreate } from "../types/transfer";
 
 export async function createTransfer(payload: TransferCreate) {
