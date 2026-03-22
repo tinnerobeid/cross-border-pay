@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 class TransferCreate(BaseModel):
@@ -6,6 +7,8 @@ class TransferCreate(BaseModel):
     send_currency: str
     receive_currency: str
     send_amount: float
+    recipient_name: str
+    recipient_phone: str
 
 class TransferOut(BaseModel):
     id: int
@@ -15,18 +18,22 @@ class TransferOut(BaseModel):
     send_currency: str
     receive_currency: str
     send_amount: float
-    fx_rate: float
-    fee_amount: float
-    receive_amount: float
+    rate_used: float | None
+    fee_used: float | None
+    total_payable: float | None
+    receive_amount: float | None
+    recipient_name: str
+    recipient_phone: str
     provider: str
     status: str
-    failure_reason: str | None
+    fail_reason: str | None
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
 class TransferStatusUpdate(BaseModel):
     status: str
-    failure_reason: str | None = None
-    
+    fail_reason: str | None = None
+
 class TransferCreateFromQuote(BaseModel):
     quote_id: int

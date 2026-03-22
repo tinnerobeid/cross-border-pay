@@ -6,12 +6,16 @@ type Props = TextInputProps & {
   label: string;
   leftText?: string;
   onLeftPress?: () => void;
+  rightIcon?: React.ReactNode;
+  onRightPress?: () => void;
 };
 
 export default function AppInput({
   label,
   leftText,
   onLeftPress,
+  rightIcon,
+  onRightPress,
   style,
   ...props
 }: Props) {
@@ -27,6 +31,18 @@ export default function AppInput({
     return <Text style={styles.leftText}>{leftText}</Text>;
   };
 
+  const Right = () => {
+    if (!rightIcon) return null;
+    if (onRightPress) {
+      return (
+        <TouchableOpacity onPress={onRightPress} style={styles.rightIconWrapper}>
+          {rightIcon}
+        </TouchableOpacity>
+      );
+    }
+    return <View style={styles.rightIconWrapper}>{rightIcon}</View>;
+  };
+
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
@@ -37,6 +53,7 @@ export default function AppInput({
           style={[styles.input, leftText ? { paddingLeft: 8 } : null, style]}
           {...props}
         />
+        <Right />
       </View>
     </View>
   );
@@ -70,6 +87,10 @@ const styles = StyleSheet.create({
   },
   leftTextWrapper: {
     paddingVertical: 4,
+  },
+  rightIconWrapper: {
+    paddingVertical: 4,
+    paddingLeft: 8,
   },
   input: {
     flex: 1,

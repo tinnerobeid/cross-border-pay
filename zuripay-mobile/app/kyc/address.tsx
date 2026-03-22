@@ -1,104 +1,88 @@
-import React from 'react';
-import { router } from 'expo-router';
-import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/colors';
+import { useAuth } from '../../contexts/AuthContext';
+import { submitKYC } from '../../services/api';
 
 export default function KycAddressScreen() {
+  const { token } = useAuth();
+  const params = useLocalSearchParams<{ idType?: string; idNumber?: string; idFront?: string; idBack?: string; selfie?: string }>();
+  const [country, setCountry] = useState('Tanzania');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!country.trim()) { Alert.alert('Required', 'Please enter your country.'); return; }
+    if (!token || !params.selfie || !params.idFront || !params.idNumber || !params.idType) {
+      Alert.alert('Error', 'Missing required information. Please go back and complete all steps.'); return;
+    }
+    setLoading(true);
+    try {
+      await submitKYC(token, { country: country.trim(), id_type: params.idType, id_number: params.idNumber }, params.selfie, params.idFront, params.idBack || undefined);
+      router.replace('/kyc/pending');
+    } catch (e: any) {
+      Alert.alert('Submission failed', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.back}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Address Verification</Text>
-          <Text style={styles.step}>Step 3 of 4</Text>
+          <TouchableOpacity onPress={() => router.back()}><Text style={styles.back}>←</Text></TouchableOpacity>
+          <Text style={styles.title}>Final Details</Text>
+          <Text style={styles.step}>Step 3 of 3</Text>
         </View>
+        <View style={styles.progressBg}><View style={[styles.progressFill, { width: '100%' }]} /></View>
 
-        <View style={styles.progressBg}>
-          <View style={[styles.progressFill, { width: '75%' }]} />
-        </View>
+        <Text style={styles.heading}>Almost done!</Text>
+        <Text style={styles.subheading}>Confirm your country and submit for verification.</Text>
 
-        <Text style={styles.heading}>Residential Address</Text>
-        <Text style={styles.subheading}>
-          Please provide your current address details as they appear on your supporting documents.
-        </Text>
+        <Text style={styles.fieldLabel}>Country of Residence</Text>
+        <TextInput style={styles.input} placeholder="e.g. Tanzania" placeholderTextColor="#98A2B3" value={country} onChangeText={setCountry} />
 
-        <TextInput placeholder="e.g. 123 Green Street" placeholderTextColor="#98A2B3" style={styles.input} />
-        <View style={styles.row}>
-          <TextInput placeholder="City" placeholderTextColor="#98A2B3" style={[styles.input, styles.half]} />
-          <TextInput placeholder="10001" placeholderTextColor="#98A2B3" style={[styles.input, styles.half]} />
-        </View>
-        <TextInput placeholder="United States" placeholderTextColor="#98A2B3" style={styles.input} />
-
-        <View style={styles.uploadBox}>
-          <Text style={styles.uploadTitle}>Upload Utility Bill or Bank Statement</Text>
-          <Text style={styles.uploadSub}>Max file size 5MB. Formats: PDF, JPG, PNG</Text>
+        <View style={styles.summaryBox}>
+          <Text style={styles.summaryTitle}>SUBMISSION SUMMARY</Text>
+          <Text style={styles.summaryItem}>ID Type: {params.idType ?? '—'}</Text>
+          <Text style={styles.summaryItem}>ID Number: {params.idNumber ?? '—'}</Text>
+          <Text style={styles.summaryItem}>Selfie: {params.selfie ? 'Captured ✓' : 'Missing'}</Text>
+          <Text style={styles.summaryItem}>ID Front: {params.idFront ? 'Uploaded ✓' : 'Missing'}</Text>
+          {params.idBack ? <Text style={styles.summaryItem}>ID Back: Uploaded ✓</Text> : null}
         </View>
 
         <View style={styles.noteRow}>
-          <Text style={styles.noteText}>
-            Document must be issued within the last 3 months and clearly show your full name and address.
-          </Text>
+          <Text style={styles.noteText}>Your documents will be reviewed within 24 hours. You will be notified once approved.</Text>
         </View>
 
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/kyc/pending')}>
-          <Text style={styles.primaryBtnText}>Continue</Text>
+        <TouchableOpacity style={[styles.primaryBtn, loading && { opacity: 0.7 }]} onPress={handleSubmit} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Submit for Verification</Text>}
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { flex: 1, padding: 20 },
+  content: { padding: 20, paddingBottom: 60 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   back: { fontSize: 22, color: Colors.text },
   title: { fontSize: 18, fontWeight: '700', color: Colors.text },
   step: { fontSize: 13, fontWeight: '700', color: Colors.primaryDark },
   progressBg: { marginTop: 10, height: 6, borderRadius: 99, backgroundColor: '#E5F2E7', overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: Colors.primary },
-  heading: { marginTop: 20, fontSize: 30, fontWeight: '800', color: Colors.text },
+  heading: { marginTop: 20, fontSize: 28, fontWeight: '800', color: Colors.text },
   subheading: { marginTop: 8, color: Colors.textSecondary, lineHeight: 21 },
-  input: {
-    marginTop: 14,
-    height: 52,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    color: Colors.text,
-  },
-  row: { flexDirection: 'row', gap: 12 },
-  half: { flex: 1 },
-  uploadBox: {
-    marginTop: 16,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: '#CFE8D4',
-    borderRadius: 16,
-    backgroundColor: '#FBFFFB',
-    padding: 18,
-    alignItems: 'center',
-  },
-  uploadTitle: { fontSize: 18, fontWeight: '800', color: Colors.text, textAlign: 'center' },
-  uploadSub: { marginTop: 6, color: Colors.textSecondary, textAlign: 'center' },
-  noteRow: {
-    marginTop: 12,
-    backgroundColor: '#F4FBF4',
-    borderRadius: 12,
-    padding: 12,
-  },
+  fieldLabel: { marginTop: 18, marginBottom: 8, fontSize: 15, fontWeight: '700', color: Colors.text },
+  input: { height: 52, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, backgroundColor: '#fff', paddingHorizontal: 14, color: Colors.text, fontSize: 16 },
+  summaryBox: { marginTop: 20, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#EEF2F6' },
+  summaryTitle: { fontSize: 12, fontWeight: '800', color: '#98A2B3', letterSpacing: 0.8, marginBottom: 10 },
+  summaryItem: { color: Colors.text, fontWeight: '600', marginBottom: 6 },
+  noteRow: { marginTop: 14, backgroundColor: '#F4FBF4', borderRadius: 12, padding: 12 },
   noteText: { color: Colors.textSecondary, fontSize: 13, lineHeight: 18 },
-  primaryBtn: {
-    marginTop: 20,
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  primaryBtn: { marginTop: 24, height: 54, borderRadius: 14, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

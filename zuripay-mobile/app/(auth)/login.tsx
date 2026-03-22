@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { router } from 'expo-router';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppInput from '../../components/AppInput';
 import PrimaryButton from '../../components/PrimaryButton';
 import Colors from '../../constants/colors';
-import { loginUser } from '../../services/api';
+import { loginUser, getCurrentUser } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setAuth } = useAuth();
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -20,8 +23,8 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const res = await loginUser({ email: identifier, password });
-      console.log('token', res.access_token);
-      // TODO: persist token via AsyncStorage or context
+      const user = await getCurrentUser(res.access_token);
+      await setAuth(res.access_token, user);
       router.replace('/(tabs)/home');
     } catch (e: any) {
       Alert.alert('Login failed', e.message);

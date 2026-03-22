@@ -1,92 +1,77 @@
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import Colors from '../../constants/colors';
+import { useAuth } from '../../contexts/AuthContext';
+import { getTransfers, TransferOut } from '../../services/api';
 
-const tabs = ['All', 'Incoming', 'Outgoing', 'Swaps'];
-
-const items = [
-  { title: 'To Sarah Jenkins', sub: 'Domestic Transfer', status: 'Success', amount: '-$240.00', color: '#111827', icon: 'card-outline' },
-  { title: 'From Mike Ross', sub: 'Incoming Payment', status: 'Success', amount: '+$1,500.00', color: Colors.success, icon: 'cash-outline' },
-  { title: 'USD to EUR Swap', sub: 'Currency Swap', status: 'Success', amount: '$500.00', color: '#111827', icon: 'swap-horizontal-outline' },
-  { title: 'Netflix Subscription', sub: 'Merchant Payment', status: 'Failed', amount: '-$15.99', color: '#9CA3AF', icon: 'alert-circle-outline' },
-  { title: 'Apple Store', sub: 'Merchant Payment', status: 'Pending', amount: '-$1,299.00', color: '#111827', icon: 'bag-outline' },
-];
+function statusColor(s: string) {
+  const u = s.toUpperCase();
+  if (u === 'COMPLETED' || u === 'PROCESSED') return Colors.success;
+  if (u === 'FAILED' || u === 'CANCELLED') return '#F04438';
+  return '#F79009';
+}
 
 export default function HistoryScreen() {
-  const [activeTab, setActiveTab] = useState('All');
+  const { token } = useAuth();
+  const [transfers, setTransfers] = useState<TransferOut[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    try { const data = await getTransfers(token); setTransfers(data); }
+    catch { /* silent */ }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.topRow}>
-          <Text style={styles.title}>Transaction History</Text>
-          <TouchableOpacity>
-            <Ionicons name="search-outline" size={20} color={Colors.text} />
-          </TouchableOpacity>
-        </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} colors={[Colors.primary]} />}
+      >
+        <Text style={styles.title}>Transaction History</Text>
 
-        <View style={styles.tabsRow}>
-          {tabs.map((tab) => (
-            <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={styles.tabBtn}>
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
-              {activeTab === tab ? <View style={styles.tabUnderline} /> : null}
+        {loading ? (
+          <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} />
+        ) : transfers.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="receipt-outline" size={44} color={Colors.textSecondary} />
+            <Text style={styles.emptyText}>No transactions yet</Text>
+            <Text style={styles.emptySubtext}>Your transfers will appear here</Text>
+            <TouchableOpacity style={styles.sendBtn} onPress={() => router.push('/(tabs)/send')}>
+              <Text style={styles.sendBtnText}>Send Money</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.filtersRow}>
-          <View style={styles.filterChip}>
-            <Text style={styles.filterText}>Domestic</Text>
-            <Ionicons name="chevron-down" size={14} color={Colors.textSecondary} />
           </View>
-          <View style={styles.filterChip}>
-            <Text style={styles.filterText}>Success</Text>
-            <Ionicons name="chevron-down" size={14} color={Colors.textSecondary} />
-          </View>
-          <View style={styles.filterChip}>
-            <Text style={styles.filterText}>Date Range</Text>
-            <Ionicons name="calendar-outline" size={14} color={Colors.textSecondary} />
-          </View>
-        </View>
-
-        <Text style={styles.dayLabel}>TODAY</Text>
-
-        {items.slice(0, 3).map((item) => (
-          <View key={item.title} style={styles.itemCard}>
-            <View style={styles.itemLeft}>
-              <View style={styles.itemIcon}>
-                <Ionicons name={item.icon as any} size={18} color={Colors.primary} />
+        ) : (
+          transfers.map(tx => (
+            <View key={tx.id} style={styles.txCard}>
+              <View style={styles.txLeft}>
+                <View style={styles.txIcon}>
+                  <Ionicons name="paper-plane-outline" size={18} color={Colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.txTitle}>{tx.send_currency} → {tx.receive_currency}</Text>
+                  <Text style={styles.txRecipient}>{tx.recipient_name}</Text>
+                  <Text style={styles.txDate}>{new Date(tx.created_at).toLocaleDateString()}</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemSub}>
-                  {item.sub} <Text style={{ color: item.status === 'Failed' ? '#EF4444' : item.status === 'Pending' ? '#F59E0B' : Colors.success }}>{item.status}</Text>
-                </Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.txAmount}>-{Number(tx.send_amount).toLocaleString()} {tx.send_currency}</Text>
+                <Text style={styles.txReceive}>+{Number(tx.receive_amount ?? 0).toLocaleString()} {tx.receive_currency}</Text>
+                <View style={[styles.statusBadge, { borderColor: statusColor(tx.status) }]}>
+                  <Text style={[styles.statusText, { color: statusColor(tx.status) }]}>{tx.status}</Text>
+                </View>
               </View>
             </View>
-            <Text style={[styles.itemAmount, { color: item.color }]}>{item.amount}</Text>
-          </View>
-        ))}
-
-        <Text style={styles.dayLabel}>YESTERDAY</Text>
-
-        {items.slice(3).map((item) => (
-          <View key={item.title} style={styles.itemCard}>
-            <View style={styles.itemLeft}>
-              <View style={styles.itemIcon}>
-                <Ionicons name={item.icon as any} size={18} color={Colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemSub}>
-                  {item.sub} <Text style={{ color: item.status === 'Failed' ? '#EF4444' : '#F59E0B' }}>{item.status}</Text>
-                </Text>
-              </View>
-            </View>
-            <Text style={[styles.itemAmount, { color: item.color }]}>{item.amount}</Text>
-          </View>
-        ))}
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -95,74 +80,20 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: 20, paddingBottom: 90 },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: { fontSize: 22, fontWeight: '800', color: Colors.text },
-  tabsRow: {
-    flexDirection: 'row',
-    gap: 18,
-    marginTop: 20,
-  },
-  tabBtn: { alignItems: 'center' },
-  tabText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '600' },
-  tabTextActive: { color: Colors.primaryDark, fontWeight: '800' },
-  tabUnderline: {
-    marginTop: 8,
-    width: 24,
-    height: 3,
-    borderRadius: 99,
-    backgroundColor: Colors.primary,
-  },
-  filtersRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 16,
-    flexWrap: 'wrap',
-  },
-  filterChip: {
-    paddingHorizontal: 12,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#F4F7F5',
-    borderWidth: 1,
-    borderColor: '#E8ECEF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  filterText: { color: Colors.textSecondary, fontWeight: '600', fontSize: 13 },
-  dayLabel: {
-    marginTop: 18,
-    marginBottom: 10,
-    color: '#98A2B3',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  itemCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F6',
-    padding: 14,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  itemLeft: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  itemIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemTitle: { fontSize: 15, fontWeight: '800', color: Colors.text },
-  itemSub: { marginTop: 2, fontSize: 13, color: Colors.textSecondary },
-  itemAmount: { fontSize: 15, fontWeight: '800' },
+  title: { fontSize: 22, fontWeight: '800', color: Colors.text, marginBottom: 16 },
+  emptyState: { alignItems: 'center', paddingVertical: 60 },
+  emptyText: { fontSize: 18, fontWeight: '700', color: Colors.text, marginTop: 14 },
+  emptySubtext: { fontSize: 14, color: Colors.textSecondary, marginTop: 6 },
+  sendBtn: { marginTop: 20, paddingHorizontal: 28, paddingVertical: 12, backgroundColor: Colors.primary, borderRadius: 12 },
+  sendBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  txCard: { backgroundColor: '#fff', borderRadius: 16, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#EEF2F6' },
+  txLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  txIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  txTitle: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  txRecipient: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  txDate: { fontSize: 12, color: '#98A2B3', marginTop: 2 },
+  txAmount: { fontSize: 14, fontWeight: '700', color: Colors.text },
+  txReceive: { fontSize: 12, color: Colors.success, marginTop: 2 },
+  statusBadge: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1 },
+  statusText: { fontSize: 11, fontWeight: '700' },
 });

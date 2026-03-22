@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -10,6 +10,11 @@ import {
   FlatList,
   TextInput,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppInput from '../../components/AppInput';
@@ -18,48 +23,115 @@ import Colors from '../../constants/colors';
 import { countryCodes, CountryCode } from '../../constants/countryCodes';
 import { registerUser } from '../../services/api';
 
+const validatePassword = (password: string): string | null => {
+  if (password.length < 8) {
+    return 'Password must be at least 8 characters long';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Password must contain at least one lowercase letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  if (!/[!@#$%^&*]/.test(password)) {
+    return 'Password must contain at least one special character (!@#$%^&*)';
+  }
+  return null;
+};
+
 export default function RegisterScreen() {
   const [agree, setAgree] = useState(false);
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState<CountryCode>(
     countryCodes.find((c) => c.code === 'US') || countryCodes[0]
   );
-  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const filteredCountries = countryCodes.filter(c =>
+    c.name.toLowerCase().includes(searchText.toLowerCase()) ||
+    c.dial_code.includes(searchText)
+  );
 
   const handleRegister = async () => {
     if (!agree) {
       Alert.alert('Agreement', 'You must agree to the terms first');
       return;
     }
-    if (!fullName || !email || !password || !phone) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword || !phone) {
       Alert.alert('Missing fields', 'Please fill in all required fields');
       return;
     }
 
+    // Validate password strength
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      Alert.alert('Invalid Password', passwordError);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Password mismatch', 'Password and confirm password do not match');
+      return;
+    }
+
     setLoading(true);
+    console.log('Starting registration...');
     try {
-      const user = await registerUser({
-        full_name: fullName,
+      console.log('Calling registerUser with:', {
+        full_name: `${firstName} ${lastName}`,
         email,
         password,
         phone: `${country.dial_code} ${phone}`,
       });
-      console.log('registered user', user);
-      router.replace('/(tabs)/home');
+      const user = await registerUser({
+        full_name: `${firstName} ${lastName}`,
+        email,
+        password,
+        phone: `${country.dial_code} ${phone}`,
+      });
+      console.log('Registration successful:', user);
+      Alert.alert(
+        'Registration Successful',
+        'Please check your email for the verification code.',
+        [{ text: 'OK', onPress: () => router.replace({
+          pathname: '/(auth)/verify',
+          params: { email: email }
+        }) }]
+      );
     } catch (e: any) {
-      Alert.alert('Registration failed', e.message);
+      console.error('Registration error:', e);
+      Alert.alert('Registration failed', e.message || 'Unknown error occurred');
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.inner}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.inner}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color={Colors.text} />
@@ -76,10 +148,16 @@ export default function RegisterScreen() {
         <Text style={styles.subheading}>Start your journey to seamless payments today.</Text>
 
         <AppInput
-          label="Full Name"
-          placeholder="Enter your full name"
-          value={fullName}
-          onChangeText={setFullName}
+          label="First Name"
+          placeholder="Enter your first name"
+          value={firstName}
+          onChangeText={setFirstName}
+        />
+        <AppInput
+          label="Last Name"
+          placeholder="Enter your last name"
+          value={lastName}
+          onChangeText={setLastName}
         />
         <AppInput
           label="Email Address"
@@ -100,9 +178,20 @@ export default function RegisterScreen() {
         <AppInput
           label="Password"
           placeholder="Create a secure password"
-          secureTextEntry
+          secureTextEntry={!showPassword}
+          rightIcon={<Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="#98A2B3" />}
+          onRightPress={() => setShowPassword(!showPassword)}
           value={password}
           onChangeText={setPassword}
+        />
+        <AppInput
+          label="Confirm Password"
+          placeholder="Confirm your password"
+          secureTextEntry={!showConfirmPassword}
+          rightIcon={<Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#98A2B3" />}
+          onRightPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
         />
 
         <TouchableOpacity style={styles.checkboxRow} onPress={() => setAgree(!agree)}>
@@ -123,40 +212,66 @@ export default function RegisterScreen() {
             Sign In
           </Text>
         </Text>
-      </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
 
-      <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={{ padding: 12 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700' }}>Select country code</Text>
+      <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => {
+        setPickerVisible(false);
+        setSearchText('');
+      }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+          <View style={{ flex: 1, padding: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.text }}>Select country code</Text>
             <TextInput
-              placeholder="Search"
+              placeholder="Search countries..."
+              value={searchText}
+              onChangeText={setSearchText}
               style={{
                 borderWidth: 1,
                 borderColor: Colors.border,
                 borderRadius: 8,
-                padding: 8,
+                padding: 12,
                 marginVertical: 8,
+                backgroundColor: '#fff',
+                color: Colors.text,
               }}
             />
             <FlatList
-              data={countryCodes}
+              data={filteredCountries}
               keyExtractor={(item) => item.code}
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={true}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={{ padding: 12, flexDirection: 'row', justifyContent: 'space-between' }}
+                  style={{
+                    padding: 12,
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    borderBottomWidth: 1,
+                    borderBottomColor: Colors.border,
+                  }}
                   onPress={() => {
                     setCountry(item);
                     setPickerVisible(false);
+                    setSearchText('');
                   }}
                 >
-                  <Text>{item.name}</Text>
-                  <Text>{item.dial_code}</Text>
+                  <Text style={{ color: Colors.text }}>{item.name}</Text>
+                  <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>{item.dial_code}</Text>
                 </TouchableOpacity>
               )}
+              ListEmptyComponent={
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: Colors.textSecondary }}>No countries found</Text>
+                </View>
+              }
             />
-            <TouchableOpacity onPress={() => setPickerVisible(false)} style={{ padding: 12 }}>
-              <Text style={{ textAlign: 'center', color: Colors.primary }}>Close</Text>
+            <TouchableOpacity onPress={() => {
+              setPickerVisible(false);
+              setSearchText('');
+            }} style={{ padding: 12, alignItems: 'center' }}>
+              <Text style={{ color: Colors.primary, fontWeight: '600' }}>Close</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -167,7 +282,7 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  inner: { flex: 1, paddingHorizontal: 22, paddingTop: 16 },
+  inner: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 40 },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',

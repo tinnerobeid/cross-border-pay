@@ -1,23 +1,27 @@
 from fastapi import HTTPException
 
 ALLOWED_STATUSES = {
-    "initiated",         # CREATED
-    "payment_pending",   # optional: user still needs to pay
-    "processing",        # we are sending to provider
-    "sent",              # provider accepted, delivering
-    "received",          # COMPLETED
+    "CREATED",
+    "initiated",
+    "payment_pending",
+    "processing",
+    "sent",
+    "received",
     "failed",
     "cancelled",
+    "CANCELLED",
 }
 
 ALLOWED_TRANSITIONS = {
-    "initiated": {"payment_pending", "processing", "failed", "cancelled"},
-    "payment_pending": {"processing", "failed", "cancelled"},
+    "CREATED": {"initiated", "payment_pending", "processing", "failed", "CANCELLED", "cancelled"},
+    "initiated": {"payment_pending", "processing", "failed", "cancelled", "CANCELLED"},
+    "payment_pending": {"processing", "failed", "cancelled", "CANCELLED"},
     "processing": {"sent", "failed"},
     "sent": {"received", "failed"},
     "received": set(),
     "failed": set(),
     "cancelled": set(),
+    "CANCELLED": set(),
 }
 
 

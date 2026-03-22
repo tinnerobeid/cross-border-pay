@@ -31,36 +31,39 @@ def seed_database():
     
     try:
         # Check if data already exists
-        existing_user = db.query(User).filter(User.email == "user@example.com").first()
+        existing_user = db.query(User).filter(User.email == "admin@zuripay.com").first()
         if existing_user:
-            print("✅ Database already seeded. Skipping...")
+            print("Database already seeded. Skipping...")
             return
         
-        print("🌱 Seeding database...")
+        print("Seeding database...")
         
         # Create test users
         user1 = User(
             email="user@example.com",
             full_name="John Doe",
-            hashed_password=hash_password("password123"),
+            hashed_password=hash_password("Test@1234"),
             role="user",
-            is_active=True
+            is_active=True,
+            is_verified=True,
         )
-        
+
         user2 = User(
             email="jane@example.com",
             full_name="Jane Smith",
-            hashed_password=hash_password("password123"),
+            hashed_password=hash_password("Test@1234"),
             role="user",
-            is_active=True
+            is_active=True,
+            is_verified=True,
         )
-        
+
         admin = User(
-            email="admin@example.com",
-            full_name="Admin User",
-            hashed_password=hash_password("admin123"),
+            email="admin@zuripay.com",
+            full_name="ZuriPay Admin",
+            hashed_password=hash_password("Admin@2024!"),
             role="admin",
-            is_active=True
+            is_active=True,
+            is_verified=True,
         )
         
         db.add_all([user1, user2, admin])
@@ -95,18 +98,18 @@ def seed_database():
         db.add_all([kyc1, kyc2])
         db.commit()
         
-        print("✅ Database seeded successfully!")
+        print(" Database seeded successfully!")
         print(f"  • 2 regular users + 1 admin")
         print(f"  • 1 approved KYC + 1 pending KYC")
         
         # Print login info
-        print("\n🔑 Test Credentials:")
-        print("  User 1: user@example.com / password123")
-        print("  User 2: jane@example.com / password123")
-        print("  Admin:  admin@example.com / admin123")
+        print("\n Test Credentials:")
+        print("  User 1: user@example.com / Test@1234")
+        print("  User 2: jane@example.com / Test@1234")
+        print("  Admin:  admin@zuripay.com / Admin@2024!")
         
     except Exception as e:
-        print(f"❌ Error seeding database: {str(e)}")
+        print(f" Error seeding database: {str(e)}")
         db.rollback()
     finally:
         db.close()

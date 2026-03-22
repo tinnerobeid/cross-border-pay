@@ -1,21 +1,64 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
+import { verifyOTP, sendOTP, getCurrentUser } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function VerifyScreen() {
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const inputs = useRef<Array<TextInput | null>>([]);
+  const { email } = useLocalSearchParams<{ email: string }>();
+  const { setAuth } = useAuth();
 
   const code = useMemo(() => digits.join(''), [digits]);
+
+  const handleVerify = async () => {
+    if (code.length < 6 || !email) return;
+
+    setLoading(true);
+    try {
+      const res = await verifyOTP({ email, otp_code: code });
+      if (res.access_token) {
+        const user = await getCurrentUser(res.access_token);
+        await setAuth(res.access_token, user);
+        router.replace('/(tabs)/home');
+      } else {
+        Alert.alert('Success', 'Account verified! Please log in.', [
+          { text: 'OK', onPress: () => router.replace('/(auth)/login') }
+        ]);
+      }
+    } catch (e: any) {
+      Alert.alert('Verification Failed', e.message || 'Invalid OTP code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+
+    setResendLoading(true);
+    try {
+      await sendOTP({ email });
+      Alert.alert('OTP Sent', 'A new verification code has been sent to your email');
+    } catch (e: any) {
+      Alert.alert('Error', 'Failed to resend OTP. Please try again.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleChange = (value: string, index: number) => {
     const clean = value.replace(/[^0-9]/g, '').slice(-1);
@@ -51,7 +94,7 @@ export default function VerifyScreen() {
 
         <Text style={styles.heading}>Enter 6-digit code</Text>
         <Text style={styles.subheading}>
-          We’ve sent a 2FA code to your registered device for Zuri Pay.
+          We’ve sent a 2FA code to {email || 'your registered email'}.
         </Text>
 
         <View style={styles.otpRow}>
@@ -87,16 +130,23 @@ export default function VerifyScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.primaryBtn, code.length < 6 && { opacity: 0.6 }]}
-          disabled={code.length < 6}
-          onPress={() => router.replace('/(tabs)/home')}
+          style={[styles.primaryBtn, (code.length < 6 || loading) && { opacity: 0.6 }]}
+          disabled={code.length < 6 || loading}
+          onPress={handleVerify}
         >
-          <Text style={styles.primaryBtnText}>Verify Account</Text>
+          <Text style={styles.primaryBtnText}>
+            {loading ? 'Verifying...' : 'Verify Account'}
+          </Text>
         </TouchableOpacity>
 
-        <Text style={styles.resendText}>
-          Didn’t receive the code? <Text style={styles.link}>Resend</Text>
-        </Text>
+        <TouchableOpacity onPress={handleResend} disabled={resendLoading}>
+          <Text style={styles.resendText}>
+            Didn’t receive the code?{' '}
+            <Text style={[styles.link, resendLoading && { opacity: 0.6 }]}>
+              {resendLoading ? 'Sending...' : 'Resend'}
+            </Text>
+          </Text>
+        </TouchableOpacity>
 
         <View style={styles.footer}>
           <Ionicons name="lock-closed" size={16} color={Colors.primary} />

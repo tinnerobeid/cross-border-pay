@@ -1,11 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { router } from 'expo-router';
-import { SafeAreaView, StyleSheet, Text, View, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View, Image, ActivityIndicator } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import SecondaryButton from '../components/SecondaryButton';
 import Colors from '../constants/colors';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function OnboardingScreen() {
+  const { token, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && token) {
+      router.replace('/(tabs)/home');
+    }
+  }, [token, isLoading]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.inner}>
@@ -20,7 +38,7 @@ export default function OnboardingScreen() {
 
         <Text style={styles.title}>Global money transfers made simple</Text>
         <Text style={styles.subtitle}>
-          Send and receive money across borders instantly with ZuriPay’s secure and lightning-fast platform.
+          Send and receive money across borders instantly with ZuriPay's secure and lightning-fast platform.
         </Text>
 
         <View style={styles.dots}>

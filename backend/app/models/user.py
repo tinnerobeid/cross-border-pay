@@ -9,11 +9,16 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone: Mapped[str] = mapped_column(String(50), nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="user")  # user|admin
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)  # Changed to False - needs verification
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)  # New field for email verification
+    otp_code: Mapped[str] = mapped_column(String(6), nullable=True)  # OTP code
+    otp_expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)  # OTP expiration
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     kyc_profile = relationship("KYCProfile", back_populates="user", uselist=False)
     transfers = relationship("Transfer", back_populates="user")
     quotes = relationship("Quote", back_populates="user")
+    recipients = relationship("Recipient", back_populates="user")
