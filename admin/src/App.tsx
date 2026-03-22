@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import type { ReactElement } from 'react'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -8,7 +9,7 @@ import KYC from './pages/KYC'
 import Transfers from './pages/Transfers'
 import Rates from './pages/Rates'
 
-function RequireAuth({ children }: { children: JSX.Element }) {
+function RequireAuth({ children }: { children: ReactElement }) {
   const token = localStorage.getItem('zuripay_admin_token')
   if (!token) return <Navigate to="/login" replace />
   return children
