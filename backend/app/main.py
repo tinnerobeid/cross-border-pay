@@ -11,9 +11,11 @@ from app.api.quote import router as quote_router
 from app.api.transfers import router as transfers_router
 from app.api.admin import router as admin_router
 from app.api.recipients import router as recipients_router
+from app.api.wallets import router as wallets_router
+from app.api.linked_accounts import router as linked_accounts_router
 
 from app.models import user, kyc, transfer  # noqa: F401
-from app.models import recipient  # noqa: F401
+from app.models import recipient, wallet, linked_account  # noqa: F401
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -50,7 +52,13 @@ async def general_exception_handler(request: Request, exc: Exception):
 # Add CORS middleware BEFORE routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for dev; restrict in production
+    allow_origins=[
+        "http://localhost:5173",   # Vite admin dashboard
+        "http://localhost:3000",   # CRA / Next.js dev
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+        "http://10.0.2.2:8000",    # Android emulator
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,6 +74,8 @@ app.include_router(quote_router)
 app.include_router(transfers_router)
 app.include_router(admin_router)
 app.include_router(recipients_router)
+app.include_router(wallets_router)
+app.include_router(linked_accounts_router)
 
 @app.get("/")
 def health():

@@ -15,17 +15,19 @@ export interface TokenResponse { access_token: string }
 export interface TransferCreate {
   send_country: string; receive_country: string; send_currency: string; receive_currency: string;
   send_amount: number; recipient_name: string; recipient_phone: string;
+  is_linked_recipient?: boolean;
 }
 export interface TransferOut {
   id: number; user_id: number; send_country: string; receive_country: string;
   send_currency: string; receive_currency: string; send_amount: number;
-  rate_used: number | null; fee_used: number | null; total_payable: number | null;
+  rate_used: number | null; fee_used: number | null; zuripay_fee: number | null;
+  transfer_type: string | null; total_payable: number | null;
   receive_amount: number | null; recipient_name: string; recipient_phone: string;
   provider: string; status: string; fail_reason: string | null; created_at: string;
 }
 
-export interface QuoteRequest { send_country: string; receive_country: string; send_currency: string; receive_currency: string; send_amount: number }
-export interface QuoteResponse { id: number; send_amount: number; fx_rate: number; fee_amount: number; receive_amount: number; total_cost: number; expires_at: string; status: string }
+export interface QuoteRequest { send_country: string; receive_country: string; send_currency: string; receive_currency: string; send_amount: number; is_linked_recipient?: boolean }
+export interface QuoteResponse { id: number; send_amount: number; fx_rate: number; fee_amount: number; receive_amount: number; total_cost: number; zuripay_fee: number; transfer_type: string; expires_at: string; status: string }
 
 export interface KYCOut { id: number; user_id: number; status: string; country: string; id_type: string; id_number: string; review_note: string | null }
 
@@ -138,4 +140,55 @@ export async function createRecipient(p: RecipientCreate, token: string): Promis
 }
 export async function deleteRecipient(id: number, token: string): Promise<void> {
   return handleResponse(await authFetch(BASE_URL + '/recipients/' + id, { method: 'DELETE' }, token));
+}
+
+export interface LinkedAccountOut {
+  id: number; account_type: string; provider: string;
+  account_holder: string; account_number: string;
+  currency: string; country: string; is_default: boolean;
+}
+export interface LinkAccountRequest {
+  account_type: string; provider: string; account_holder: string;
+  account_number: string; currency: string; country: string;
+}
+
+export async function getLinkedAccounts(token: string): Promise<LinkedAccountOut[]> {
+  return handleResponse(await authFetch(BASE_URL + '/linked-accounts', { method: 'GET' }, token));
+}
+export async function linkAccount(p: LinkAccountRequest, token: string): Promise<LinkedAccountOut> {
+  return handleResponse(await authFetch(BASE_URL + '/linked-accounts', { method: 'POST', body: JSON.stringify(p) }, token));
+}
+export async function setDefaultLinkedAccount(id: number, token: string): Promise<LinkedAccountOut> {
+  return handleResponse(await authFetch(BASE_URL + '/linked-accounts/' + id + '/default', { method: 'PATCH' }, token));
+}
+export async function unlinkAccount(id: number, token: string): Promise<void> {
+  return handleResponse(await authFetch(BASE_URL + '/linked-accounts/' + id, { method: 'DELETE' }, token));
+}
+
+export interface WalletOut { id: number; currency: string; balance: number; is_primary: boolean }
+
+export async function getWallets(token: string): Promise<WalletOut[]> {
+  return handleResponse(await authFetch(BASE_URL + '/wallets', { method: 'GET' }, token));
+}
+export async function addWallet(currency: string, token: string): Promise<WalletOut> {
+  return handleResponse(await authFetch(BASE_URL + '/wallets', { method: 'POST', body: JSON.stringify({ currency }) }, token));
+}
+export async function removeWallet(id: number, token: string): Promise<void> {
+  return handleResponse(await authFetch(BASE_URL + '/wallets/' + id, { method: 'DELETE' }, token));
+}
+export interface DepositOut { wallet_id: number; currency: string; amount: number; new_balance: number; source: string }
+export async function depositFromLinkedAccount(walletId: number, linkedAccountId: number, amount: number, token: string): Promise<DepositOut> {
+  return handleResponse(await authFetch(BASE_URL + '/wallets/' + walletId + '/deposit', {
+    method: 'POST', body: JSON.stringify({ linked_account_id: linkedAccountId, amount }),
+  }, token));
+}
+
+export interface RatePreview { from_currency: string; to_currency: string; rate: number }
+
+export async function getLiveRates(token: string): Promise<RatePreview[]> {
+  return handleResponse(await authFetch(BASE_URL + '/quote/rates/live', { method: 'GET' }, token));
+}
+
+export async function deleteAccount(token: string): Promise<void> {
+  return handleResponse(await authFetch(BASE_URL + '/auth/me', { method: 'DELETE' }, token));
 }

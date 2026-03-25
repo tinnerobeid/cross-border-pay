@@ -22,3 +22,5 @@ class User(Base):
     transfers = relationship("Transfer", back_populates="user")
     quotes = relationship("Quote", back_populates="user")
     recipients = relationship("Recipient", back_populates="user")
+    wallets = relationship("Wallet", back_populates="user", cascade="all, delete-orphan")
+    linked_accounts = relationship("LinkedAccount", back_populates="user", cascade="all, delete-orphan")

@@ -25,6 +25,8 @@ class Transfer(Base):
     # ✅ pricing snapshot (locked)
     rate_used = Column(Numeric(18, 8), nullable=True)
     fee_used = Column(Numeric(18, 2), nullable=True)
+    zuripay_fee = Column(Numeric(18, 2), nullable=True, default=0)  # ZuriPay earnings
+    transfer_type = Column(String(30), nullable=True, default="international")  # international|domestic|domestic_free
     total_payable = Column(Numeric(18, 2), nullable=True)
     priced_at = Column(DateTime(timezone=False), nullable=True)
 

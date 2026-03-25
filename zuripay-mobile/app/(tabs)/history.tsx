@@ -7,6 +7,8 @@ import Colors from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 import { getTransfers, TransferOut } from '../../services/api';
 
+type Tab = 'all' | 'international' | 'domestic';
+
 function statusColor(s: string) {
   const u = s.toUpperCase();
   if (u === 'COMPLETED' || u === 'PROCESSED') return Colors.success;
@@ -14,11 +16,16 @@ function statusColor(s: string) {
   return '#F79009';
 }
 
+function isInternational(tx: TransferOut) {
+  return tx.send_currency !== tx.receive_currency;
+}
+
 export default function HistoryScreen() {
   const { token } = useAuth();
   const [transfers, setTransfers] = useState<TransferOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [tab, setTab] = useState<Tab>('all');
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -29,6 +36,12 @@ export default function HistoryScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  const filtered = transfers.filter(tx => {
+    if (tab === 'international') return isInternational(tx);
+    if (tab === 'domestic') return !isInternational(tx);
+    return true;
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -38,23 +51,50 @@ export default function HistoryScreen() {
       >
         <Text style={styles.title}>Transaction History</Text>
 
+        {/* Tabs */}
+        <View style={styles.tabBar}>
+          {(['all', 'international', 'domestic'] as Tab[]).map(t => (
+            <TouchableOpacity
+              key={t}
+              style={[styles.tabBtn, tab === t && styles.tabBtnActive]}
+              onPress={() => setTab(t)}
+            >
+              <Text style={[styles.tabBtnText, tab === t && styles.tabBtnTextActive]}>
+                {t === 'all' ? 'All' : t === 'international' ? 'International' : 'Domestic'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {loading ? (
           <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} />
-        ) : transfers.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="receipt-outline" size={44} color={Colors.textSecondary} />
-            <Text style={styles.emptyText}>No transactions yet</Text>
-            <Text style={styles.emptySubtext}>Your transfers will appear here</Text>
-            <TouchableOpacity style={styles.sendBtn} onPress={() => router.push('/(tabs)/send')}>
-              <Text style={styles.sendBtnText}>Send Money</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptyText}>
+              {tab === 'domestic' ? 'No domestic transfers yet' :
+               tab === 'international' ? 'No international transfers yet' :
+               'No transactions yet'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {tab === 'domestic' ? 'Domestic transfers will appear here' : 'Your transfers will appear here'}
+            </Text>
+            {tab !== 'domestic' && (
+              <TouchableOpacity style={styles.sendBtn} onPress={() => router.push('/(tabs)/send')}>
+                <Text style={styles.sendBtnText}>Send Money</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
-          transfers.map(tx => (
+          filtered.map(tx => (
             <View key={tx.id} style={styles.txCard}>
               <View style={styles.txLeft}>
-                <View style={styles.txIcon}>
-                  <Ionicons name="paper-plane-outline" size={18} color={Colors.primary} />
+                <View style={[styles.txIcon, isInternational(tx) ? {} : { backgroundColor: '#FFF4E5' }]}>
+                  <Ionicons
+                    name={isInternational(tx) ? 'globe-outline' : 'phone-portrait-outline'}
+                    size={18}
+                    color={isInternational(tx) ? Colors.primary : '#E07B00'}
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.txTitle}>{tx.send_currency} → {tx.receive_currency}</Text>
@@ -81,12 +121,24 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: 20, paddingBottom: 90 },
   title: { fontSize: 22, fontWeight: '800', color: Colors.text, marginBottom: 16 },
+  tabBar: {
+    flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14,
+    padding: 4, marginBottom: 16, borderWidth: 1, borderColor: '#EEF2F6',
+  },
+  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 11, alignItems: 'center' },
+  tabBtnActive: { backgroundColor: Colors.primarySoft },
+  tabBtnText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  tabBtnTextActive: { color: Colors.primary, fontWeight: '800' },
   emptyState: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 18, fontWeight: '700', color: Colors.text, marginTop: 14 },
   emptySubtext: { fontSize: 14, color: Colors.textSecondary, marginTop: 6 },
   sendBtn: { marginTop: 20, paddingHorizontal: 28, paddingVertical: 12, backgroundColor: Colors.primary, borderRadius: 12 },
   sendBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  txCard: { backgroundColor: '#fff', borderRadius: 16, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#EEF2F6' },
+  txCard: {
+    backgroundColor: '#fff', borderRadius: 16, padding: 14,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: 10, borderWidth: 1, borderColor: '#EEF2F6',
+  },
   txLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   txIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   txTitle: { fontSize: 15, fontWeight: '700', color: Colors.text },

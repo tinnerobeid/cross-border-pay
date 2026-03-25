@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 
+
 class TransferCreate(BaseModel):
     send_country: str
     receive_country: str
@@ -9,6 +10,8 @@ class TransferCreate(BaseModel):
     send_amount: float
     recipient_name: str
     recipient_phone: str
+    is_linked_recipient: bool = False
+
 
 class TransferOut(BaseModel):
     id: int
@@ -20,6 +23,8 @@ class TransferOut(BaseModel):
     send_amount: float
     rate_used: float | None
     fee_used: float | None
+    zuripay_fee: float | None
+    transfer_type: str | None
     total_payable: float | None
     receive_amount: float | None
     recipient_name: str
@@ -31,9 +36,11 @@ class TransferOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class TransferStatusUpdate(BaseModel):
     status: str
     fail_reason: str | None = None
+
 
 class TransferCreateFromQuote(BaseModel):
     quote_id: int

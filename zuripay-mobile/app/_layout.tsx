@@ -20,6 +20,10 @@ export default function RootLayout() {
         <Stack.Screen name="settings/security" />
         <Stack.Screen name="settings/notifications" />
         <Stack.Screen name="settings/pin" />
+        <Stack.Screen name="support" />
+        <Stack.Screen name="add-money" />
+        <Stack.Screen name="add-wallet" />
+        <Stack.Screen name="link-account" />
       </Stack>
     </AuthProvider>
   );

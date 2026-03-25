@@ -13,8 +13,10 @@ from app.schemas.kyc import KYCOut, AdminKYCDecision
 from app.schemas.transfer import TransferOut, TransferStatusUpdate
 from app.services.transfer_service import validate_transition
 from app.services import pricing_engine as _pe
+from app.services.pricing_engine import get_rate, _FALLBACK, _CACHE
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from app.core.security import hash_password
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -37,6 +39,14 @@ class UserStatusUpdate(BaseModel):
     is_active: bool
 
 
+class UserCreate(BaseModel):
+    email: EmailStr
+    full_name: str
+    phone: str | None = None
+    password: str
+    role: str = "user"  # "user" or "admin"
+
+
 class StatsOut(BaseModel):
     total_users: int
     active_users: int
@@ -49,11 +59,14 @@ class StatsOut(BaseModel):
     volume_total: float
     failed_transfers: int
     cancelled_transfers: int
+    total_fees_earned: float
+    fees_earned_today: float
 
 
 class RateOut(BaseModel):
     pair: str
     rate: float
+    is_override: bool = False  # True = admin-set override; False = live/fallback rate
 
 
 class RateUpdate(BaseModel):
@@ -106,6 +119,13 @@ def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin
         .scalar() or 0
     )
 
+    total_fees_earned = db.query(func.sum(Transfer.zuripay_fee)).scalar() or 0
+    fees_earned_today = (
+        db.query(func.sum(Transfer.zuripay_fee))
+        .filter(func.date(Transfer.created_at) == today)
+        .scalar() or 0
+    )
+
     return StatsOut(
         total_users=total_users,
         active_users=active_users,
@@ -118,6 +138,8 @@ def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin
         volume_total=float(volume_total),
         failed_transfers=failed_transfers,
         cancelled_transfers=cancelled_transfers,
+        total_fees_earned=float(total_fees_earned),
+        fees_earned_today=float(fees_earned_today),
     )
 
 
@@ -145,6 +167,32 @@ def list_users(
     if role:
         q = q.filter(User.role == role)
     return q.order_by(User.id.desc()).offset(skip).limit(limit).all()
+
+
+@router.post("/users", response_model=UserAdminOut, status_code=201)
+def create_user(
+    payload: UserCreate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Create a new user (or admin) directly from the admin panel — no OTP required."""
+    if db.query(User).filter(User.email == payload.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    if payload.role not in ("user", "admin"):
+        raise HTTPException(status_code=400, detail="Role must be 'user' or 'admin'")
+    u = User(
+        email=payload.email,
+        full_name=payload.full_name,
+        phone=payload.phone,
+        hashed_password=hash_password(payload.password),
+        role=payload.role,
+        is_active=True,
+        is_verified=True,
+    )
+    db.add(u)
+    db.commit()
+    db.refresh(u)
+    return u
 
 
 @router.get("/users/{user_id}", response_model=UserAdminOut)
@@ -291,10 +339,33 @@ def update_transfer_status(
 
 @router.get("/rates", response_model=list[RateOut])
 def list_rates(admin: User = Depends(require_admin)):
-    return [
-        RateOut(pair=f"{k[0]}/{k[1]}", rate=float(v))
-        for k, v in _pe.SIM_FX.items()
-    ]
+    """
+    Returns all known rates:
+    - Admin overrides (is_override=True) — set manually, take highest priority
+    - Live/cached rates from the FX API (is_override=False)
+    - Fallback hardcoded rates (is_override=False) shown only if no live rate exists
+    """
+    seen: set[tuple] = set()
+    result: list[RateOut] = []
+
+    # 1. Admin overrides
+    for pair, rate in _pe.SIM_FX.items():
+        result.append(RateOut(pair=f"{pair[0]}/{pair[1]}", rate=float(rate), is_override=True))
+        seen.add(pair)
+
+    # 2. Cached live rates
+    for pair, (rate, _) in _CACHE.items():
+        if pair not in seen:
+            result.append(RateOut(pair=f"{pair[0]}/{pair[1]}", rate=float(rate), is_override=False))
+            seen.add(pair)
+
+    # 3. Fallback rates (show ones not already covered)
+    for pair, rate in _FALLBACK.items():
+        if pair not in seen:
+            result.append(RateOut(pair=f"{pair[0]}/{pair[1]}", rate=float(rate), is_override=False))
+            seen.add(pair)
+
+    return result
 
 
 @router.put("/rates/{from_currency}/{to_currency}", response_model=RateOut)
@@ -306,7 +377,7 @@ def update_rate(
 ):
     pair = (from_currency.upper(), to_currency.upper())
     _pe.SIM_FX[pair] = Decimal(str(payload.rate))
-    return RateOut(pair=f"{pair[0]}/{pair[1]}", rate=payload.rate)
+    return RateOut(pair=f"{pair[0]}/{pair[1]}", rate=payload.rate, is_override=True)
 
 
 @router.post("/rates", response_model=RateOut)
@@ -316,7 +387,7 @@ def add_rate(
 ):
     pair = (payload.from_currency.upper(), payload.to_currency.upper())
     _pe.SIM_FX[pair] = Decimal(str(payload.rate))
-    return RateOut(pair=f"{pair[0]}/{pair[1]}", rate=payload.rate)
+    return RateOut(pair=f"{pair[0]}/{pair[1]}", rate=payload.rate, is_override=True)
 
 
 @router.delete("/rates/{from_currency}/{to_currency}")

@@ -18,9 +18,21 @@ class Settings(BaseSettings):
 
     STORAGE_ROOT: str = "./storage"
 
-    # FX API KEY (optional for MVP)
+    # FX API KEY
     EXCHANGERATE_HOST_API_KEY: str = "free"
-    
+
+    # ── Email (Gmail SMTP) ────────────────────────────────────────────────────
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""          # your Gmail address
+    SMTP_PASSWORD: str = ""      # Gmail App Password (not your login password)
+    EMAIL_FROM_NAME: str = "ZuriPay"
+
+    # ── SMS (Africa's Talking) ────────────────────────────────────────────────
+    AT_USERNAME: str = ""          # your Africa's Talking username
+    AT_API_KEY: str = ""           # your API key from the dashboard
+    AT_SENDER_ID: str = "ZuriPay" # optional shortcode/sender name
+
     # Environment
     ENVIRONMENT: str = "development"
 

@@ -1,264 +1,221 @@
 import { useEffect, useState } from 'react'
-import { getKYCRecords, approveKYC, rejectKYC, KYCRecord } from '../api'
+import { getKYCRecords, approveKYC, rejectKYC, KYCRecord, getToken } from '../api'
 import Badge, { statusVariant } from '../components/Badge'
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected'
 
-interface ReviewState {
-  id: number
-  action: 'approve' | 'reject'
-  note: string
-  loading: boolean
+function fmtDate(d: string) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function KYCCard({ record, onApprove, onReject }: {
+  record: KYCRecord
+  onApprove: (id: number, note: string) => Promise<void>
+  onReject: (id: number, note: string) => Promise<void>
+}) {
+  const [note, setNote] = useState('')
+  const [acting, setActing] = useState<'approve' | 'reject' | null>(null)
+
+  async function doApprove() {
+    setActing('approve')
+    await onApprove(record.id, note)
+    setActing(null)
+  }
+
+  async function doReject() {
+    if (!note.trim()) { alert('Please enter a rejection reason.'); return }
+    if (!window.confirm('Reject this KYC submission?')) return
+    setActing('reject')
+    await onReject(record.id, note)
+    setActing(null)
+  }
+
+  return (
+    <div className="card overflow-hidden">
+      {/* Status stripe */}
+      <div className={`h-1 ${record.status === 'approved' ? 'bg-emerald-500' : record.status === 'rejected' ? 'bg-red-500' : 'bg-amber-400'}`} />
+
+      <div className="p-5 space-y-4">
+        {/* User info */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-semibold text-slate-800">{record.user_name || `User #${record.user_id}`}</p>
+            <p className="text-xs text-slate-500">{record.user_email}</p>
+          </div>
+          <Badge label={record.status} variant={statusVariant(record.status)} />
+        </div>
+
+        {/* Details grid */}
+        <div className="grid grid-cols-2 gap-2 bg-slate-50 rounded-lg p-3">
+          {[
+            { label: 'Country', value: record.country },
+            { label: 'ID Type', value: record.id_type },
+            { label: 'ID Number', value: record.id_number },
+            { label: 'Submitted', value: record.submitted_at ? fmtDate(record.submitted_at) : '—' },
+          ].map(row => (
+            <div key={row.label}>
+              <p className="text-xs text-slate-400 uppercase tracking-wide">{row.label}</p>
+              <p className="text-sm font-medium text-slate-700 mt-0.5 truncate">{row.value || '—'}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Review note if already reviewed */}
+        {record.status !== 'pending' && record.review_note && (
+          <div className={`px-3 py-2 rounded-lg text-sm ${record.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-1">Review Note</p>
+            <p>{record.review_note}</p>
+            {record.reviewed_at && <p className="text-xs opacity-70 mt-1">{fmtDate(record.reviewed_at)}</p>}
+          </div>
+        )}
+
+        {/* Actions for pending */}
+        {record.status === 'pending' && (
+          <div className="space-y-3 border-t border-slate-100 pt-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                Review Note <span className="text-red-400">(required for reject)</span>
+              </label>
+              <textarea
+                rows={2}
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="Add a note (optional for approval, required for rejection)…"
+                className="input-field resize-none text-xs"
+                disabled={acting !== null}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={doApprove}
+                disabled={acting !== null}
+                className="btn-success flex-1 justify-center"
+              >
+                {acting === 'approve' ? (
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                )}
+                {acting === 'approve' ? 'Approving…' : 'Approve'}
+              </button>
+              <button
+                onClick={doReject}
+                disabled={acting !== null}
+                className="btn-danger flex-1 justify-center"
+              >
+                {acting === 'reject' ? (
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                )}
+                {acting === 'reject' ? 'Rejecting…' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default function KYC() {
-  const token = localStorage.getItem('zuripay_admin_token') ?? ''
-
-  const [records, setRecords] = useState<KYCRecord[]>([])
+  const token = getToken()!
+  const [all, setAll] = useState<KYCRecord[]>([])
+  const [tab, setTab] = useState<StatusFilter>('pending')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filter, setFilter] = useState<StatusFilter>('all')
-  const [review, setReview] = useState<ReviewState | null>(null)
-  const [successMsg, setSuccessMsg] = useState('')
+  const [toast, setToast] = useState('')
 
-  function fetchRecords(status: StatusFilter) {
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
+
+  useEffect(() => {
     setLoading(true)
-    setError('')
-    const s = status === 'all' ? undefined : status
-    getKYCRecords(token, s)
-      .then(setRecords)
-      .catch((e: Error) => setError(e.message))
+    getKYCRecords(token)
+      .then(setAll)
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }
+  }, [token])
 
-  useEffect(() => { fetchRecords(filter) }, [filter])
-
-  function startReview(id: number, action: 'approve' | 'reject') {
-    if (action === 'reject') {
-      if (!window.confirm('Reject this KYC application? This action will notify the user.')) return
-    }
-    setReview({ id, action, note: '', loading: false })
-  }
-
-  function cancelReview() { setReview(null) }
-
-  async function submitReview() {
-    if (!review) return
-    setReview((r) => r ? { ...r, loading: true } : null)
-
+  async function handleApprove(id: number, note: string) {
     try {
-      const fn = review.action === 'approve' ? approveKYC : rejectKYC
-      const updated = await fn(token, review.id, review.note)
-      setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-      setSuccessMsg(`KYC ${review.action === 'approve' ? 'approved' : 'rejected'} successfully.`)
-      setTimeout(() => setSuccessMsg(''), 3000)
-      setReview(null)
+      const updated = await approveKYC(token, id, note)
+      setAll(prev => prev.map(k => k.id === id ? { ...k, ...updated } : k))
+      showToast('KYC approved successfully')
     } catch (e: unknown) {
-      alert(`Failed to ${review.action}: ${e instanceof Error ? e.message : 'Unknown error'}`)
-      setReview((r) => r ? { ...r, loading: false } : null)
+      setError(e instanceof Error ? e.message : 'Failed')
     }
   }
 
-  const tabs: StatusFilter[] = ['all', 'pending', 'approved', 'rejected']
+  async function handleReject(id: number, note: string) {
+    try {
+      const updated = await rejectKYC(token, id, note)
+      setAll(prev => prev.map(k => k.id === id ? { ...k, ...updated } : k))
+      showToast('KYC rejected')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed')
+    }
+  }
+
+  const counts = {
+    all: all.length,
+    pending: all.filter(k => k.status === 'pending').length,
+    approved: all.filter(k => k.status === 'approved').length,
+    rejected: all.filter(k => k.status === 'rejected').length,
+  }
+
+  const visible = tab === 'all' ? all : all.filter(k => k.status === tab)
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">KYC Reviews</h2>
-        <p className="text-sm text-gray-500 mt-0.5">Verify user identity documents</p>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-800">KYC Review</h2>
+        <span className="text-sm text-slate-500">{counts.pending} pending</span>
       </div>
 
-      {error && <div className="alert-error mb-4 flex items-center gap-2"><span>⚠️</span> {error}</div>}
-      {successMsg && <div className="alert-success mb-4 flex items-center gap-2"><span>✅</span> {successMsg}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 bg-white rounded-xl border border-gray-100 shadow-sm p-1 w-fit">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setFilter(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-              filter === t ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
+        {(['all', 'pending', 'approved', 'rejected'] as StatusFilter[]).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-1.5 rounded-md text-xs font-semibold capitalize transition flex items-center gap-1.5 ${tab === t ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>
             {t}
+            <span className={`badge text-xs px-1.5 py-0 ${tab === t ? 'bg-slate-100 text-slate-600' : 'bg-white/60 text-slate-500'}`}>{counts[t]}</span>
           </button>
         ))}
       </div>
 
-      {/* Inline review form */}
-      {review && (
-        <div className={`mb-4 rounded-xl border p-4 ${review.action === 'approve' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <h4 className={`font-semibold text-sm mb-2 ${review.action === 'approve' ? 'text-green-800' : 'text-red-800'}`}>
-            {review.action === 'approve' ? '✅ Approve KYC' : '❌ Reject KYC'} — KYC #{review.id}
-          </h4>
-          <textarea
-            value={review.note}
-            onChange={(e) => setReview((r) => r ? { ...r, note: e.target.value } : null)}
-            className="input-field mb-3 resize-none"
-            rows={2}
-            placeholder={`Review note (optional)…`}
-            disabled={review.loading}
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={submitReview}
-              disabled={review.loading}
-              className={review.action === 'approve' ? 'btn-success' : 'btn-danger'}
-            >
-              {review.loading ? 'Processing…' : `Confirm ${review.action === 'approve' ? 'Approval' : 'Rejection'}`}
-            </button>
-            <button onClick={cancelReview} className="btn-secondary" disabled={review.loading}>
-              Cancel
-            </button>
-          </div>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => <div key={i} className="card p-5 space-y-3"><div className="skeleton h-5 w-40" /><div className="skeleton h-20 w-full" /><div className="skeleton h-10 w-full" /></div>)}
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="card p-12 text-center">
+          {tab === 'pending' ? (
+            <>
+              <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <p className="font-semibold text-slate-700">All caught up!</p>
+              <p className="text-slate-400 text-sm mt-1">No pending KYC submissions to review</p>
+            </>
+          ) : (
+            <p className="text-slate-400">No {tab} submissions</p>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {visible.map(k => (
+            <KYCCard key={k.id} record={k} onApprove={handleApprove} onReject={handleReject} />
+          ))}
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="table-th">ID</th>
-                <th className="table-th">User</th>
-                <th className="table-th hidden md:table-cell">Country</th>
-                <th className="table-th hidden md:table-cell">ID Type</th>
-                <th className="table-th hidden lg:table-cell">Documents</th>
-                <th className="table-th hidden lg:table-cell">Submitted</th>
-                <th className="table-th">Status</th>
-                <th className="table-th hidden xl:table-cell">Note</th>
-                <th className="table-th">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                [...Array(5)].map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100">
-                    {[...Array(9)].map((_, j) => (
-                      <td key={j} className="table-td">
-                        <div className="skeleton h-4 w-full max-w-[80px]" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : records.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-12 text-gray-400">
-                    <div className="text-4xl mb-2">🪪</div>
-                    <p className="font-medium">No KYC records</p>
-                    <p className="text-sm">No submissions match the current filter</p>
-                  </td>
-                </tr>
-              ) : (
-                records.map((rec) => (
-                  <tr key={rec.id} className="table-row">
-                    <td className="table-td font-mono text-xs text-gray-400">#{rec.id}</td>
-                    <td className="table-td">
-                      <p className="font-medium text-gray-800 text-sm">{rec.user_name || '—'}</p>
-                      <p className="text-xs text-gray-400">{rec.user_email}</p>
-                    </td>
-                    <td className="table-td hidden md:table-cell text-gray-600 text-sm">{rec.country || '—'}</td>
-                    <td className="table-td hidden md:table-cell">
-                      <span className="text-xs font-medium text-gray-600 uppercase bg-gray-100 px-2 py-0.5 rounded">
-                        {rec.id_type || '—'}
-                      </span>
-                    </td>
-                    <td className="table-td hidden lg:table-cell">
-                      <div className="space-y-0.5">
-                        {rec.selfie_path && (
-                          <a
-                            href={rec.selfie_path}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-500 hover:underline block"
-                            title={rec.selfie_path}
-                          >
-                            📸 Selfie
-                          </a>
-                        )}
-                        {rec.id_front_path && (
-                          <a
-                            href={rec.id_front_path}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-500 hover:underline block"
-                            title={rec.id_front_path}
-                          >
-                            🪪 ID Front
-                          </a>
-                        )}
-                        {rec.id_back_path && (
-                          <a
-                            href={rec.id_back_path}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-500 hover:underline block"
-                            title={rec.id_back_path}
-                          >
-                            🪪 ID Back
-                          </a>
-                        )}
-                        {!rec.selfie_path && !rec.id_front_path && !rec.id_back_path && (
-                          <span className="text-xs text-gray-400">No files</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="table-td hidden lg:table-cell text-xs text-gray-500">
-                      {rec.submitted_at ? new Date(rec.submitted_at).toLocaleDateString() : '—'}
-                      {rec.reviewed_at && (
-                        <p className="text-xs text-gray-400">
-                          Reviewed: {new Date(rec.reviewed_at).toLocaleDateString()}
-                        </p>
-                      )}
-                    </td>
-                    <td className="table-td">
-                      <Badge label={rec.status} variant={statusVariant(rec.status)} />
-                    </td>
-                    <td className="table-td hidden xl:table-cell text-xs text-gray-500 max-w-[160px]">
-                      {rec.review_note ? (
-                        <span title={rec.review_note}>
-                          {rec.review_note.slice(0, 50)}{rec.review_note.length > 50 ? '…' : ''}
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="table-td">
-                      {rec.status === 'pending' ? (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => startReview(rec.id, 'approve')}
-                            disabled={review?.id === rec.id}
-                            className="btn-success text-xs px-2.5 py-1"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => startReview(rec.id, 'reject')}
-                            disabled={review?.id === rec.id}
-                            className="btn-danger text-xs px-2.5 py-1"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400 italic">Reviewed</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium z-50">
+          ✓ {toast}
         </div>
-
-        {!loading && records.length > 0 && (
-          <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-500">
-            {records.length} record{records.length !== 1 ? 's' : ''}
-            {filter !== 'all' ? ` (filtered: ${filter})` : ''}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }

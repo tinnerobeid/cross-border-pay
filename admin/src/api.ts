@@ -67,9 +67,14 @@ export interface Transfer {
 export interface Rate {
   pair: string
   rate: number
+  is_override: boolean
 }
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
+
+export function getToken(): string | null {
+  return localStorage.getItem('zuripay_admin_token')
+}
 
 async function request<T>(
   path: string,
@@ -80,20 +85,14 @@ async function request<T>(
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   }
+  if (token) headers['Authorization'] = `Bearer ${token}`
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers,
-  })
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
 
   if (res.status === 401) {
     localStorage.removeItem('zuripay_admin_token')
     window.location.href = '/login'
-    throw new Error('Unauthorized — redirecting to login')
+    throw new Error('Session expired')
   }
 
   if (!res.ok) {
@@ -101,26 +100,42 @@ async function request<T>(
     try {
       const body = await res.json()
       message = body.detail ?? body.message ?? message
-    } catch {
-      // ignore parse errors
-    }
+    } catch { /* ignore */ }
     throw new Error(message)
   }
 
-  // Handle 204 No Content
-  if (res.status === 204) {
-    return {} as T
-  }
-
+  if (res.status === 204) return {} as T
   return res.json() as Promise<T>
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export async function login(email: string, password: string): Promise<{ access_token: string }> {
-  return request('/auth/login', null, {
+  return request('/auth/admin/login', null, {
     method: 'POST',
     body: JSON.stringify({ email, password }),
+  })
+}
+
+export async function checkSetupStatus(): Promise<{ admin_exists: boolean }> {
+  return request('/auth/setup/status', null)
+}
+
+export async function setupFirstAdmin(data: {
+  email: string; full_name: string; password: string; phone?: string
+}): Promise<{ access_token: string }> {
+  return request('/auth/setup', null, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function createUser(token: string, data: {
+  email: string; full_name: string; phone?: string; password: string; role: string
+}): Promise<User> {
+  return request('/admin/users', token, {
+    method: 'POST',
+    body: JSON.stringify(data),
   })
 }
 
@@ -151,7 +166,6 @@ export async function getUsers(token: string, filters: UsersFilter = {}): Promis
   if (filters.role) params.set('role', filters.role)
   if (filters.skip !== undefined) params.set('skip', String(filters.skip))
   if (filters.limit !== undefined) params.set('limit', String(filters.limit))
-
   const qs = params.toString()
   return request(`/admin/users${qs ? `?${qs}` : ''}`, token)
 }
@@ -164,11 +178,7 @@ export async function getUserTransfers(token: string, id: number): Promise<Trans
   return request(`/admin/users/${id}/transfers`, token)
 }
 
-export async function updateUserStatus(
-  token: string,
-  id: number,
-  is_active: boolean
-): Promise<User> {
+export async function updateUserStatus(token: string, id: number, is_active: boolean): Promise<User> {
   return request(`/admin/users/${id}/status`, token, {
     method: 'PATCH',
     body: JSON.stringify({ is_active }),
@@ -211,16 +221,12 @@ export async function getTransfers(token: string, filters: TransfersFilter = {})
   if (filters.user_id !== undefined) params.set('user_id', String(filters.user_id))
   if (filters.skip !== undefined) params.set('skip', String(filters.skip))
   if (filters.limit !== undefined) params.set('limit', String(filters.limit))
-
   const qs = params.toString()
   return request(`/admin/transfers${qs ? `?${qs}` : ''}`, token)
 }
 
 export async function updateTransferStatus(
-  token: string,
-  id: number,
-  status: string,
-  fail_reason?: string
+  token: string, id: number, status: string, fail_reason?: string
 ): Promise<Transfer> {
   return request(`/admin/transfers/${id}/status`, token, {
     method: 'PATCH',
@@ -234,36 +240,20 @@ export async function getRates(token: string): Promise<Rate[]> {
   return request('/admin/rates', token)
 }
 
-export async function updateRate(
-  token: string,
-  from: string,
-  to: string,
-  rate: number
-): Promise<Rate> {
+export async function updateRate(token: string, from: string, to: string, rate: number): Promise<Rate> {
   return request(`/admin/rates/${from}/${to}`, token, {
     method: 'PUT',
     body: JSON.stringify({ rate }),
   })
 }
 
-export async function createRate(
-  token: string,
-  from_currency: string,
-  to_currency: string,
-  rate: number
-): Promise<Rate> {
+export async function createRate(token: string, from_currency: string, to_currency: string, rate: number): Promise<Rate> {
   return request('/admin/rates', token, {
     method: 'POST',
     body: JSON.stringify({ from_currency, to_currency, rate }),
   })
 }
 
-export async function deleteRate(
-  token: string,
-  from: string,
-  to: string
-): Promise<{ message: string }> {
-  return request(`/admin/rates/${from}/${to}`, token, {
-    method: 'DELETE',
-  })
+export async function deleteRate(token: string, from: string, to: string): Promise<{ message: string }> {
+  return request(`/admin/rates/${from}/${to}`, token, { method: 'DELETE' })
 }

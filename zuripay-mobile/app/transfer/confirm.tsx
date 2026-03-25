@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,6 +12,7 @@ export default function ConfirmTransferScreen() {
   const params = useLocalSearchParams<{
     sendAmount?: string; receiveAmount?: string; feeAmount?: string; fxRate?: string;
     sendCurrency?: string; receiveCurrency?: string; sendCountry?: string; receiveCountry?: string;
+    transferType?: string; isLinkedRecipient?: string;
   }>();
 
   const sendAmount = params.sendAmount ?? '0.00';
@@ -22,6 +23,8 @@ export default function ConfirmTransferScreen() {
   const receiveCurrency = params.receiveCurrency ?? 'KRW';
   const sendCountry = params.sendCountry ?? 'Tanzania';
   const receiveCountry = params.receiveCountry ?? 'South Korea';
+  const transferType = params.transferType ?? 'international';
+  const isLinkedRecipient = params.isLinkedRecipient === 'true';
 
   const [recipientName, setRecipientName] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
@@ -43,6 +46,7 @@ export default function ConfirmTransferScreen() {
         send_amount: parseFloat(sendAmount),
         recipient_name: recipientName.trim(),
         recipient_phone: recipientPhone.trim(),
+        is_linked_recipient: isLinkedRecipient,
       }, token);
       router.replace({
         pathname: '/transfer/success',
@@ -74,7 +78,8 @@ export default function ConfirmTransferScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
           <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={22} color={Colors.text} /></TouchableOpacity>
           <Text style={styles.title}>Review Transfer</Text>
@@ -102,7 +107,16 @@ export default function ConfirmTransferScreen() {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Transfer Fee</Text>
-            <Text style={styles.summaryValue}>{Number(feeAmount).toLocaleString()} {sendCurrency}</Text>
+            {transferType === 'domestic_free'
+              ? <Text style={[styles.summaryValue, { color: '#12B76A' }]}>FREE</Text>
+              : <Text style={styles.summaryValue}>{Number(feeAmount).toLocaleString()} {sendCurrency}</Text>
+            }
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Transfer Type</Text>
+            <Text style={styles.summaryValue}>
+              {transferType === 'domestic_free' ? 'Domestic (Free)' : transferType === 'domestic' ? 'Domestic' : 'International'}
+            </Text>
           </View>
           <View style={[styles.summaryRow, { marginTop: 8 }]}>
             <Text style={styles.totalReceiveLabel}>Recipient Receives</Text>
@@ -120,13 +134,14 @@ export default function ConfirmTransferScreen() {
           <Text style={styles.cancelText}>Cancel Transaction</Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 20, paddingBottom: 60 },
+  content: { padding: 20, paddingBottom: 100 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 20, fontWeight: '700', color: Colors.text },
   amountHero: { marginTop: 18, backgroundColor: '#F2F8F0', borderRadius: 18, paddingVertical: 22, alignItems: 'center' },

@@ -30,8 +30,17 @@ def create_transfer(
         receive_currency=payload.receive_currency,
         send_country=payload.send_country,
         receive_country=payload.receive_country,
+        is_linked_recipient=payload.is_linked_recipient,
     )
     provider = choose_provider(payload.send_country, payload.receive_country)
+
+    is_domestic = payload.send_currency.upper() == payload.receive_currency.upper()
+    if is_domestic and payload.is_linked_recipient:
+        transfer_type = "domestic_free"
+    elif is_domestic:
+        transfer_type = "domestic"
+    else:
+        transfer_type = "international"
 
     t = Transfer(
         user_id=user.id,
@@ -42,6 +51,8 @@ def create_transfer(
         send_amount=payload.send_amount,
         rate_used=float(result.fx_rate),
         fee_used=float(result.fee_amount),
+        zuripay_fee=float(result.fee_amount),
+        transfer_type=transfer_type,
         total_payable=float(result.total_cost),
         receive_amount=float(result.receive_amount),
         recipient_name=payload.recipient_name,

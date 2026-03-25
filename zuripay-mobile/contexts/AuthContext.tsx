@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserOut } from '../services/api';
+import { UserOut, getCurrentUser } from '../services/api';
 
 const TOKEN_KEY = 'zuripay_token';
 
@@ -20,10 +20,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    AsyncStorage.getItem(TOKEN_KEY).then((stored) => {
-      if (stored) setToken(stored);
-      setIsLoading(false);
-    });
+    async function restoreSession() {
+      try {
+        const stored = await AsyncStorage.getItem(TOKEN_KEY);
+        if (!stored) return;
+        // Validate the token is still accepted by the server
+        const me = await getCurrentUser(stored);
+        setToken(stored);
+        setUser(me);
+      } catch {
+        // Token expired or invalid — clear it so the user sees the login screen
+        await AsyncStorage.removeItem(TOKEN_KEY);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    restoreSession();
   }, []);
 
   const setAuth = async (newToken: string, newUser: UserOut) => {
