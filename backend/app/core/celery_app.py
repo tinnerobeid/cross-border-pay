@@ -1,9 +1,11 @@
+import os
+
 from celery import Celery
 from app.core.config import settings
 
-# Broker & backend (adjust if needed)
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+# Broker & backend — reads REDIS_URL env var so Docker service name resolves correctly
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Celery application instance that the CLI will look for
 celery = Celery(
