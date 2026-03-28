@@ -11,6 +11,7 @@ from app.models.wallet import Wallet
 from app.schemas.quote import QuoteRequest, QuoteResponse
 from app.services.pricing_engine import (
     PricingEngine, INTERNATIONAL_MIN_SEND, INTERNATIONAL_MIN_BALANCE,
+    INTERNATIONAL_FEE, EXCHANGE_FEE, DOMESTIC_FEE,
 )
 
 router = APIRouter(prefix="/quote", tags=["Quote"])
@@ -108,15 +109,25 @@ def create_quote(
     db.commit()
     db.refresh(q)
 
-    # Build response with extra fields not stored in DB
+    # Compute fee breakdown for response
+    currency = send_currency
+    if is_domestic:
+        transfer_fee = float(DOMESTIC_FEE.get(currency, Decimal("500"))) if not payload.is_linked_recipient else 0.0
+        exchange_fee = 0.0
+    else:
+        transfer_fee = float(INTERNATIONAL_FEE.get(currency, Decimal("3000")))
+        exchange_fee = float(EXCHANGE_FEE.get(currency, Decimal("1800")))
+
     return {
         "id": q.id,
         "send_amount": q.send_amount,
         "fx_rate": q.fx_rate,
         "fee_amount": q.fee_amount,
+        "transfer_fee": transfer_fee,
+        "exchange_fee": exchange_fee,
         "receive_amount": q.receive_amount,
         "total_cost": q.total_cost,
-        "zuripay_fee": q.fee_amount,   # ZuriPay earns the full fee
+        "zuripay_fee": q.fee_amount,
         "transfer_type": transfer_type,
         "expires_at": q.expires_at,
         "status": q.status,

@@ -23,6 +23,15 @@ import Colors from '../../constants/colors';
 import { countryCodes, CountryCode } from '../../constants/countryCodes';
 import { registerUser } from '../../services/api';
 
+const RESIDENCE_COUNTRIES = [
+  { name: 'Tanzania', flag: '🇹🇿' },
+  { name: 'Kenya', flag: '🇰🇪' },
+  { name: 'Rwanda', flag: '🇷🇼' },
+  { name: 'Uganda', flag: '🇺🇬' },
+  { name: 'South Korea', flag: '🇰🇷' },
+  { name: 'Burundi', flag: '🇧🇮' },
+];
+
 const validatePassword = (password: string): string | null => {
   if (password.length < 8) {
     return 'Password must be at least 8 characters long';
@@ -58,6 +67,8 @@ export default function RegisterScreen() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [residence, setResidence] = useState<typeof RESIDENCE_COUNTRIES[0] | null>(null);
+  const [showResidencePicker, setShowResidencePicker] = useState(false);
 
   const filteredCountries = countryCodes.filter(c =>
     c.name.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -71,6 +82,10 @@ export default function RegisterScreen() {
     }
     if (!firstName || !lastName || !email || !password || !confirmPassword || !phone) {
       Alert.alert('Missing fields', 'Please fill in all required fields');
+      return;
+    }
+    if (!residence) {
+      Alert.alert('Missing field', 'Please select your country of residence');
       return;
     }
 
@@ -100,6 +115,7 @@ export default function RegisterScreen() {
         email,
         password,
         phone: `${country.dial_code} ${phone}`,
+        country_of_residence: residence?.name,
       });
       console.log('Registration successful:', user);
       Alert.alert(
@@ -175,6 +191,15 @@ export default function RegisterScreen() {
           value={phone}
           onChangeText={setPhone}
         />
+        {/* Country of Residence */}
+        <Text style={styles.inputLabel}>Country of Residence</Text>
+        <TouchableOpacity style={styles.residenceSelector} onPress={() => setShowResidencePicker(true)}>
+          <Text style={styles.residenceSelectorText}>
+            {residence ? `${residence.flag}  ${residence.name}` : 'Select your country of residence'}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
+        </TouchableOpacity>
+
         <AppInput
           label="Password"
           placeholder="Create a secure password"
@@ -215,6 +240,31 @@ export default function RegisterScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Residence country picker */}
+      <Modal visible={showResidencePicker} transparent animationType="slide" onRequestClose={() => setShowResidencePicker(false)}>
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShowResidencePicker(false)} />
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Country of Residence</Text>
+          <FlatList
+            data={RESIDENCE_COUNTRIES}
+            keyExtractor={item => item.name}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.residenceRow}
+                onPress={() => { setResidence(item); setShowResidencePicker(false); }}
+              >
+                <Text style={styles.residenceFlag}>{item.flag}</Text>
+                <Text style={styles.residenceLabel}>{item.name}</Text>
+                {residence?.name === item.name && (
+                  <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
 
       <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => {
         setPickerVisible(false);
@@ -333,4 +383,27 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 14,
   },
+  inputLabel: { fontSize: 14, fontWeight: '700', color: Colors.text, marginBottom: 8, marginTop: 4 },
+  residenceSelector: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#fff', borderRadius: 14, borderWidth: 1,
+    borderColor: Colors.border, height: 52, paddingHorizontal: 14, marginBottom: 18,
+  },
+  residenceSelectorText: { fontSize: 15, color: Colors.text, flex: 1 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: {
+    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 20, paddingBottom: 40, maxHeight: '60%',
+  },
+  sheetHandle: {
+    width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0',
+    alignSelf: 'center', marginTop: 12, marginBottom: 16,
+  },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.text, marginBottom: 14 },
+  residenceRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 16, borderBottomWidth: 1, borderColor: '#F1F4F2',
+  },
+  residenceFlag: { fontSize: 26 },
+  residenceLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: Colors.text },
 });

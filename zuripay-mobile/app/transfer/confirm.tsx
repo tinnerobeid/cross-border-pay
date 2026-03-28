@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
-import { createTransfer } from '../../services/api';
+import { createTransfer, lookupRecipient } from '../../services/api';
 
 export default function ConfirmTransferScreen() {
   const { token } = useAuth();
@@ -13,22 +13,54 @@ export default function ConfirmTransferScreen() {
     sendAmount?: string; receiveAmount?: string; feeAmount?: string; fxRate?: string;
     sendCurrency?: string; receiveCurrency?: string; sendCountry?: string; receiveCountry?: string;
     transferType?: string; isLinkedRecipient?: string;
+    transferFee?: string; exchangeFee?: string; totalCost?: string;
   }>();
 
   const sendAmount = params.sendAmount ?? '0.00';
   const receiveAmount = params.receiveAmount ?? '0.00';
   const feeAmount = params.feeAmount ?? '0.00';
+  const transferFee = params.transferFee ?? '0';
+  const exchangeFee = params.exchangeFee ?? '0';
+  const totalCost = params.totalCost ?? params.sendAmount ?? '0.00';
   const fxRate = params.fxRate ?? '0';
   const sendCurrency = params.sendCurrency ?? 'TZS';
   const receiveCurrency = params.receiveCurrency ?? 'KRW';
   const sendCountry = params.sendCountry ?? 'Tanzania';
   const receiveCountry = params.receiveCountry ?? 'South Korea';
   const transferType = params.transferType ?? 'international';
-  const isLinkedRecipient = params.isLinkedRecipient === 'true';
 
   const [recipientName, setRecipientName] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
+  const [linkedUser, setLinkedUser] = useState<{ is_linked: boolean; name: string | null } | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Effective transfer type — if backend detects a linked recipient it may upgrade to domestic_free
+  const isDomesticFree = transferType === 'domestic_free' || linkedUser?.is_linked === true;
+  const isDomestic = sendCurrency === receiveCurrency;
+
+  const handlePhoneChange = (phone: string) => {
+    setRecipientPhone(phone);
+    setLinkedUser(null);
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+
+    const trimmed = phone.trim();
+    if (!token || trimmed.length < 9) return;
+
+    lookupTimer.current = setTimeout(async () => {
+      setLookingUp(true);
+      try {
+        const result = await lookupRecipient(trimmed, token);
+        setLinkedUser(result);
+        // Auto-fill name if found and name field is empty
+        if (result.is_linked && result.name && !recipientName.trim()) {
+          setRecipientName(result.name);
+        }
+      } catch { /* silent */ }
+      finally { setLookingUp(false); }
+    }, 600);
+  };
 
   const handleConfirm = async () => {
     if (!recipientName.trim() || !recipientPhone.trim()) {
@@ -46,7 +78,7 @@ export default function ConfirmTransferScreen() {
         send_amount: parseFloat(sendAmount),
         recipient_name: recipientName.trim(),
         recipient_phone: recipientPhone.trim(),
-        is_linked_recipient: isLinkedRecipient,
+        is_linked_recipient: linkedUser?.is_linked ?? false,
       }, token);
       router.replace({
         pathname: '/transfer/success',
@@ -94,31 +126,81 @@ export default function ConfirmTransferScreen() {
         <Text style={styles.sectionTitle}>RECIPIENT DETAILS</Text>
         <View style={styles.inputCard}>
           <Text style={styles.inputLabel}>Full Name</Text>
-          <TextInput style={styles.input} placeholder="Recipient full name" placeholderTextColor="#98A2B3" value={recipientName} onChangeText={setRecipientName} />
-          <Text style={[styles.inputLabel, { marginTop: 12 }]}>Phone Number</Text>
-          <TextInput style={styles.input} placeholder="+255 7XX XXX XXX" placeholderTextColor="#98A2B3" value={recipientPhone} onChangeText={setRecipientPhone} keyboardType="phone-pad" />
+          <TextInput
+            style={styles.input}
+            placeholder="Recipient full name"
+            placeholderTextColor="#98A2B3"
+            value={recipientName}
+            onChangeText={setRecipientName}
+          />
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 6 }}>
+            <Text style={[styles.inputLabel, { marginBottom: 0, flex: 1 }]}>Phone Number</Text>
+            {lookingUp && <ActivityIndicator size="small" color={Colors.primary} />}
+            {!lookingUp && linkedUser?.is_linked && (
+              <View style={styles.linkedBadge}>
+                <Ionicons name="checkmark-circle" size={13} color="#fff" />
+                <Text style={styles.linkedBadgeText}>ZuriPay user</Text>
+              </View>
+            )}
+          </View>
+          <TextInput
+            style={styles.input}
+            placeholder="+255 7XX XXX XXX"
+            placeholderTextColor="#98A2B3"
+            value={recipientPhone}
+            onChangeText={handlePhoneChange}
+            keyboardType="phone-pad"
+          />
+          {linkedUser?.is_linked && isDomestic && (
+            <View style={styles.freeHint}>
+              <Ionicons name="gift-outline" size={14} color="#15803d" />
+              <Text style={styles.freeHintText}>Free domestic transfer — no fees!</Text>
+            </View>
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>TRANSACTION SUMMARY</Text>
         <View style={styles.summaryBox}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Exchange Rate</Text>
-            <Text style={styles.summaryValue}>1 {sendCurrency} = {Number(fxRate).toFixed(4)} {receiveCurrency}</Text>
+            <Text style={styles.summaryLabel}>You Send</Text>
+            <Text style={styles.summaryValue}>{Number(sendAmount).toLocaleString()} {sendCurrency}</Text>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Transfer Fee</Text>
-            {transferType === 'domestic_free'
-              ? <Text style={[styles.summaryValue, { color: '#12B76A' }]}>FREE</Text>
-              : <Text style={styles.summaryValue}>{Number(feeAmount).toLocaleString()} {sendCurrency}</Text>
-            }
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Transfer Type</Text>
-            <Text style={styles.summaryValue}>
-              {transferType === 'domestic_free' ? 'Domestic (Free)' : transferType === 'domestic' ? 'Domestic' : 'International'}
+          {!isDomestic && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Exchange Rate</Text>
+              <Text style={styles.summaryValue}>1 {sendCurrency} = {Number(fxRate).toFixed(4)} {receiveCurrency}</Text>
+            </View>
+          )}
+          {(isDomesticFree) ? (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Fee</Text>
+              <Text style={[styles.summaryValue, { color: '#12B76A' }]}>FREE</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Transfer Fee</Text>
+                <Text style={styles.summaryValue}>{Number(transferFee).toLocaleString()} {sendCurrency}</Text>
+              </View>
+              {!isDomestic && (
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Exchange Fee</Text>
+                  <Text style={styles.summaryValue}>{Number(exchangeFee).toLocaleString()} {sendCurrency}</Text>
+                </View>
+              )}
+              <View style={[styles.summaryRow, styles.totalFeeRow]}>
+                <Text style={styles.summaryLabel}>Total Fees</Text>
+                <Text style={[styles.summaryValue, { color: '#F79009' }]}>{Number(feeAmount).toLocaleString()} {sendCurrency}</Text>
+              </View>
+            </>
+          )}
+          <View style={[styles.summaryRow, styles.dividerRow]}>
+            <Text style={styles.summaryLabel}>Total Deducted</Text>
+            <Text style={[styles.summaryValue, { fontWeight: '800' }]}>
+              {isDomesticFree ? Number(sendAmount).toLocaleString() : Number(totalCost).toLocaleString()} {sendCurrency}
             </Text>
           </View>
-          <View style={[styles.summaryRow, { marginTop: 8 }]}>
+          <View style={[styles.summaryRow, { marginTop: 4 }]}>
             <Text style={styles.totalReceiveLabel}>Recipient Receives</Text>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.totalReceiveValue}>{Number(receiveAmount).toLocaleString()} {receiveCurrency}</Text>
@@ -151,8 +233,14 @@ const styles = StyleSheet.create({
   inputCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#EEF2F6' },
   inputLabel: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, marginBottom: 6 },
   input: { height: 48, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 14, fontSize: 16, color: Colors.text, backgroundColor: Colors.background },
+  linkedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#15803d', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  linkedBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  freeHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: '#f0fdf4', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  freeHintText: { color: '#15803d', fontSize: 13, fontWeight: '600' },
   summaryBox: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#EEF2F6' },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  totalFeeRow: { borderTopWidth: 1, borderColor: '#EEF2F6', paddingTop: 10 },
+  dividerRow: { borderTopWidth: 2, borderColor: '#EEF2F6', paddingTop: 10, marginTop: 2 },
   summaryLabel: { color: Colors.textSecondary, fontSize: 15 },
   summaryValue: { color: Colors.text, fontSize: 15, fontWeight: '700' },
   totalReceiveLabel: { color: Colors.text, fontSize: 18, fontWeight: '800' },

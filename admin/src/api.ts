@@ -14,6 +14,8 @@ export interface AdminStats {
   volume_total: number
   failed_transfers: number
   cancelled_transfers: number
+  total_fees_earned: number
+  fees_earned_today: number
 }
 
 export interface User {
@@ -208,9 +210,20 @@ export async function rejectKYC(token: string, id: number, note: string): Promis
 
 // ─── Transfers ───────────────────────────────────────────────────────────────
 
+export interface PeriodStats {
+  from_date: string | null
+  to_date: string | null
+  transfer_count: number
+  completed_count: number
+  total_volume: number
+  total_fees: number
+}
+
 export interface TransfersFilter {
   status?: string
   user_id?: number
+  from_date?: string
+  to_date?: string
   skip?: number
   limit?: number
 }
@@ -219,10 +232,20 @@ export async function getTransfers(token: string, filters: TransfersFilter = {})
   const params = new URLSearchParams()
   if (filters.status) params.set('status', filters.status)
   if (filters.user_id !== undefined) params.set('user_id', String(filters.user_id))
+  if (filters.from_date) params.set('from_date', filters.from_date)
+  if (filters.to_date) params.set('to_date', filters.to_date)
   if (filters.skip !== undefined) params.set('skip', String(filters.skip))
   if (filters.limit !== undefined) params.set('limit', String(filters.limit))
   const qs = params.toString()
   return request(`/admin/transfers${qs ? `?${qs}` : ''}`, token)
+}
+
+export async function getPeriodStats(token: string, from_date?: string, to_date?: string): Promise<PeriodStats> {
+  const params = new URLSearchParams()
+  if (from_date) params.set('from_date', from_date)
+  if (to_date) params.set('to_date', to_date)
+  const qs = params.toString()
+  return request(`/admin/stats/period${qs ? `?${qs}` : ''}`, token)
 }
 
 export async function updateTransferStatus(

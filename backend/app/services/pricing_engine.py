@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 SIM_FX: dict[tuple[str, str], Decimal] = {}
 
 # ── Fee tables ─────────────────────────────────────────────────────────────────
-# International flat fee per send currency (~3 000 KRW equivalent)
+# International transfer flat fee per send currency (~3 000 KRW equivalent)
 INTERNATIONAL_FEE: dict[str, Decimal] = {
     'KRW': Decimal('3000'),
     'TZS': Decimal('5500'),
@@ -19,6 +19,17 @@ INTERNATIONAL_FEE: dict[str, Decimal] = {
     'RWF': Decimal('2500'),
     'UGX': Decimal('8000'),
     'BIF': Decimal('6000'),
+}
+
+# Exchange/conversion fee added on top of transfer fee for international sends (~1 800 KRW)
+EXCHANGE_FEE: dict[str, Decimal] = {
+    'KRW': Decimal('1800'),
+    'TZS': Decimal('3400'),
+    'USD': Decimal('1.50'),
+    'KES': Decimal('235'),
+    'RWF': Decimal('1500'),
+    'UGX': Decimal('4800'),
+    'BIF': Decimal('3600'),
 }
 
 # Domestic fee when recipient is NOT a linked account (~1 000 KRW equivalent)
@@ -78,47 +89,106 @@ _FALLBACK: dict[tuple[str, str], Decimal] = {
     ("USD", "KES"): Decimal("130.00"),
 }
 
-# ── Live rate cache: pair -> (rate, fetched_at) ────────────────────────────────
-_CACHE: dict[tuple[str, str], tuple[Decimal, datetime]] = {}
-_CACHE_TTL = timedelta(hours=1)
+# ── Live rate cache ────────────────────────────────────────────────────────────
+# Stores USD-based rates fetched in one bulk call: { "TZS": Decimal, "KRW": Decimal, ... }
+_USD_RATES: dict[str, Decimal] = {}
+_USD_RATES_FETCHED_AT: datetime | None = None
+_CACHE_TTL = timedelta(hours=6)
+
+# If the bulk fetch fails, back off for this long before retrying
+_BACKOFF_TTL = timedelta(hours=1)
+_LAST_FETCH_FAILED_AT: datetime | None = None
+
+# Free bulk FX API — no API key, CDN-backed, updated daily, covers all currencies
+# Docs: https://github.com/fawazahmed0/exchange-api
+_BULK_FX_URL = (
+    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
+)
+_BULK_FX_FALLBACK_URL = (
+    "https://latest.currency-api.pages.dev/v1/currencies/usd.json"
+)
+
+# Currencies we care about (lowercase for the API response keys)
+_OUR_CURRENCIES = {"tzs", "krw", "kes", "rwf", "ugx", "bif", "usd"}
 
 
-def _fetch_live_rate(from_currency: str, to_currency: str) -> Decimal | None:
-    """Fetch a single conversion rate from exchangerate.host. Returns None on failure."""
-    try:
-        # Lazy import to avoid circular at startup
-        from app.core.config import settings
-        api_key = settings.EXCHANGERATE_HOST_API_KEY
-        if not api_key or api_key == "free":
-            return None
-
-        resp = httpx.get(
-            "https://api.exchangerate.host/convert",
-            params={
-                "from": from_currency,
-                "to": to_currency,
-                "amount": 1,
-                "access_key": api_key,
-            },
-            timeout=5.0,
-        )
-        data = resp.json()
-        if data.get("success") and data.get("result"):
-            rate = Decimal(str(data["result"]))
-            logger.info("Live FX %s/%s = %s", from_currency, to_currency, rate)
-            return rate
-        logger.warning("exchangerate.host bad response for %s/%s: %s", from_currency, to_currency, data)
-    except Exception as exc:
-        logger.warning("Live FX fetch failed for %s/%s: %s", from_currency, to_currency, exc)
+def _fetch_bulk_usd_rates() -> dict[str, Decimal] | None:
+    """
+    Fetch all rates against USD in a single HTTP call.
+    Returns { "TZS": Decimal("2597"), "KRW": Decimal("1370"), ... } or None on failure.
+    Uses a CDN-backed free API with no key required.
+    """
+    for url in (_BULK_FX_URL, _BULK_FX_FALLBACK_URL):
+        try:
+            resp = httpx.get(url, timeout=8.0)
+            if resp.status_code != 200:
+                logger.warning("Bulk FX API returned %s from %s", resp.status_code, url)
+                continue
+            data = resp.json()
+            usd_map: dict = data.get("usd", {})
+            if not usd_map:
+                logger.warning("Bulk FX API: empty usd map from %s", url)
+                continue
+            result = {
+                code.upper(): Decimal(str(rate))
+                for code, rate in usd_map.items()
+                if code.lower() in _OUR_CURRENCIES and rate
+            }
+            logger.info("Bulk FX: fetched %d rates from %s", len(result), url)
+            return result
+        except Exception as exc:
+            logger.warning("Bulk FX fetch failed from %s: %s", url, exc)
     return None
+
+
+def _ensure_rates_loaded() -> bool:
+    """
+    Load (or refresh) the USD rate table if stale.
+    Returns True if live rates are available, False if using fallback.
+    """
+    global _USD_RATES, _USD_RATES_FETCHED_AT, _LAST_FETCH_FAILED_AT
+
+    now = datetime.utcnow()
+
+    # Still within cache TTL — no fetch needed
+    if _USD_RATES_FETCHED_AT and (now - _USD_RATES_FETCHED_AT) < _CACHE_TTL:
+        return bool(_USD_RATES)
+
+    # Within backoff window after a failed fetch — don't hammer the API
+    if _LAST_FETCH_FAILED_AT and (now - _LAST_FETCH_FAILED_AT) < _BACKOFF_TTL:
+        return bool(_USD_RATES)
+
+    rates = _fetch_bulk_usd_rates()
+    if rates:
+        _USD_RATES = rates
+        _USD_RATES_FETCHED_AT = now
+        _LAST_FETCH_FAILED_AT = None
+        return True
+    else:
+        _LAST_FETCH_FAILED_AT = now
+        return bool(_USD_RATES)  # True if we have stale data to fall back on
+
+
+def _live_cross_rate(from_c: str, to_c: str) -> Decimal | None:
+    """
+    Derive FROM/TO rate by cross-calculating through USD.
+    1 FROM = (usd_to_to / usd_to_from) TO
+    """
+    if not _ensure_rates_loaded():
+        return None
+    usd_to_from = _USD_RATES.get(from_c)
+    usd_to_to = _USD_RATES.get(to_c)
+    if not usd_to_from or not usd_to_to or usd_to_from == 0:
+        return None
+    return (usd_to_to / usd_to_from).quantize(Decimal("0.0000001"))
 
 
 def get_rate(from_currency: str, to_currency: str) -> Decimal:
     """
     Rate resolution order:
     1. Admin override (SIM_FX)
-    2. Live API cache (refreshed every hour)
-    3. Fallback hardcoded table
+    2. Live bulk-fetched rates (one HTTP call caches all pairs, refreshed every 6 h)
+    3. Hardcoded fallback table
     4. 1.0 (same-currency passthrough)
     """
     from_c = from_currency.upper()
@@ -133,26 +203,12 @@ def get_rate(from_currency: str, to_currency: str) -> Decimal:
     if pair in SIM_FX:
         return SIM_FX[pair]
 
-    # 2. Cache hit
-    if pair in _CACHE:
-        rate, fetched_at = _CACHE[pair]
-        if datetime.utcnow() - fetched_at < _CACHE_TTL:
-            return rate
-        # Cache stale — fall through to re-fetch
-
-    # 3. Live fetch
-    live = _fetch_live_rate(from_c, to_c)
+    # 2. Live cross-rate (bulk fetch, single HTTP call per refresh cycle)
+    live = _live_cross_rate(from_c, to_c)
     if live is not None:
-        _CACHE[pair] = (live, datetime.utcnow())
         return live
 
-    # 4. Stale cache is better than nothing
-    if pair in _CACHE:
-        rate, fetched_at = _CACHE[pair]
-        logger.warning("Using stale cached rate for %s/%s (age: %s)", from_c, to_c, datetime.utcnow() - fetched_at)
-        return rate
-
-    # 5. Hardcoded fallback
+    # 3. Hardcoded fallback
     if pair in _FALLBACK:
         logger.warning("Using hardcoded fallback rate for %s/%s", from_c, to_c)
         return _FALLBACK[pair]
@@ -192,7 +248,10 @@ class PricingEngine:
             return Decimal("0")
         if is_domestic:
             return DOMESTIC_FEE.get(currency, Decimal("500"))
-        return INTERNATIONAL_FEE.get(currency, Decimal("3000"))
+        # International: transfer fee + exchange/conversion fee
+        transfer_fee = INTERNATIONAL_FEE.get(currency, Decimal("3000"))
+        exchange_fee = EXCHANGE_FEE.get(currency, Decimal("1800"))
+        return transfer_fee + exchange_fee
 
     def price(
         self,
@@ -207,9 +266,9 @@ class PricingEngine:
         fx_rate = get_rate(send_currency, receive_currency)
         fee_amount = self._calculate_fee(send_currency, is_domestic, is_linked_recipient)
 
-        net = (send_amount - fee_amount).max(Decimal("0"))
-        receive_amount = (net * fx_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        total_cost = send_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        # Recipient gets the full send_amount converted; fee is charged on top
+        receive_amount = (send_amount * fx_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        total_cost = (send_amount + fee_amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         now = datetime.utcnow()
         return PricingResult(

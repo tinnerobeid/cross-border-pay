@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View,
   ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
 import Colors from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
-import { getTransfers, getLiveRates, getWallets, TransferOut, RatePreview, WalletOut } from '../../services/api';
+import { getTransfers, getLiveRates, getWallets, setPrimaryWallet, removeWallet, TransferOut, RatePreview, WalletOut } from '../../services/api';
 
 function getGreeting(name: string) {
   const hour = new Date().getHours();
@@ -54,6 +54,7 @@ export default function HomeScreen() {
   const [wallets, setWallets] = useState<WalletOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [walletActing, setWalletActing] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -83,6 +84,41 @@ export default function HomeScreen() {
   }, [navigation, fetchData]);
 
   const onRefresh = () => { setRefreshing(true); fetchData(); };
+
+  const handleSetPrimary = async (w: WalletOut) => {
+    if (w.is_primary || !token) return;
+    setWalletActing(w.id);
+    try {
+      await setPrimaryWallet(w.id, token);
+      await fetchData();
+    } catch { /* silent */ }
+    finally { setWalletActing(null); }
+  };
+
+  const handleDeleteWallet = (w: WalletOut) => {
+    if (!token) return;
+    Alert.alert(
+      'Remove Wallet',
+      `Remove your ${w.currency} wallet? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove', style: 'destructive',
+          onPress: async () => {
+            setWalletActing(w.id);
+            try {
+              await removeWallet(w.id, token);
+              await fetchData();
+            } catch (e: any) {
+              Alert.alert('Error', e.message);
+            } finally {
+              setWalletActing(null);
+            }
+          },
+        },
+      ]
+    );
+  };
   const recent = transfers.slice(0, 5);
   const primaryWallet = wallets.find(w => w.is_primary) ?? wallets[0] ?? null;
   const primaryCurrency = primaryWallet?.currency ?? 'TZS';
@@ -108,7 +144,7 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
           <Text style={styles.brand}>Zuri Pay</Text>
-          <TouchableOpacity style={styles.bell}>
+          <TouchableOpacity style={styles.bell} onPress={() => router.push('/settings/notifications')}>
             <Ionicons name="notifications-outline" size={18} color={Colors.primary} />
           </TouchableOpacity>
         </View>
@@ -181,19 +217,44 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
-            {wallets.map((w, i) => {
-              const isDark = i > 0;
+            {wallets.map((w) => {
+              const isDark = !w.is_primary;
               const symbol = CURRENCY_SYMBOL[w.currency] ?? w.currency;
               const name = CURRENCY_NAME[w.currency] ?? w.currency;
+              const acting = walletActing === w.id;
               return (
-                <View key={w.id} style={[styles.walletCard, isDark && styles.walletCardDark]}>
-                  <Text style={[styles.walletType, isDark && styles.walletTypeDark]}>
-                    {name.toUpperCase()}
-                  </Text>
-                  <Text style={[styles.walletAmount, isDark && styles.walletAmountDark]}>
-                    {symbol} {Number(w.balance).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                  </Text>
-                </View>
+                <TouchableOpacity
+                  key={w.id}
+                  style={[styles.walletCard, isDark && styles.walletCardDark]}
+                  onPress={() => handleSetPrimary(w)}
+                  activeOpacity={w.is_primary ? 1 : 0.75}
+                >
+                  <View style={styles.walletCardTop}>
+                    <Text style={[styles.walletType, isDark && styles.walletTypeDark]}>
+                      {name.toUpperCase()}
+                    </Text>
+                    {!w.is_primary && (
+                      <TouchableOpacity
+                        onPress={() => handleDeleteWallet(w)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="close-circle" size={18} color={acting ? '#888' : '#98A2B3'} />
+                      </TouchableOpacity>
+                    )}
+                    {w.is_primary && (
+                      <View style={styles.primaryDot} />
+                    )}
+                  </View>
+                  {acting
+                    ? <ActivityIndicator color="#fff" style={{ marginTop: 14 }} />
+                    : <Text style={[styles.walletAmount, isDark && styles.walletAmountDark]}>
+                        {symbol} {Number(w.balance).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      </Text>
+                  }
+                  {w.is_primary && (
+                    <Text style={styles.primaryHint}>Tap another to switch</Text>
+                  )}
+                </TouchableOpacity>
               );
             })}
             <TouchableOpacity style={styles.addWalletCard} onPress={() => router.push('/add-wallet')}>
@@ -207,7 +268,7 @@ export default function HomeScreen() {
         <View style={styles.actionsRow}>
           <Action icon="paper-plane-outline" label="Send" onPress={() => router.push('/(tabs)/send')} />
           <Action icon="add-outline" label="Add Money" onPress={() => router.push('/add-money')} />
-          <Action icon="help-circle-outline" label="Support" onPress={() => router.push('/support')} />
+          <Action icon="swap-horizontal-outline" label="Swap" onPress={() => router.push('/swap')} />
           <Action icon="person-outline" label="Account" onPress={() => router.push('/(tabs)/profile')} />
         </View>
 
@@ -301,10 +362,13 @@ const styles = StyleSheet.create({
   rateChipValue: { fontSize: 16, fontWeight: '800', color: Colors.text, marginTop: 4 },
   walletCard: { backgroundColor: Colors.primary, borderRadius: 18, padding: 18, marginRight: 12, minWidth: 160 },
   walletCardDark: { backgroundColor: '#101828' },
-  walletType: { color: '#D5F8DA', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  walletCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  walletType: { color: '#D5F8DA', fontSize: 11, fontWeight: '700', letterSpacing: 0.5, flex: 1 },
   walletTypeDark: { color: '#98A2B3' },
   walletAmount: { color: '#fff', fontSize: 26, fontWeight: '800', marginTop: 14 },
   walletAmountDark: { color: '#fff' },
+  primaryDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.6)' },
+  primaryHint: { color: 'rgba(255,255,255,0.5)', fontSize: 10, marginTop: 8 },
   primaryBadge: {
     marginTop: 10, alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 999,

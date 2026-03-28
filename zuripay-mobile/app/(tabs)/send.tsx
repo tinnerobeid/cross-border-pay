@@ -30,6 +30,8 @@ const CURRENCIES: Currency[] = [
 const DEFAULT_SEND = CURRENCIES[0]; // TZS
 const DEFAULT_RECEIVE = CURRENCIES[1]; // KRW
 
+type TransferMode = 'international' | 'domestic';
+
 function CurrencyPickerModal({
   visible,
   selected,
@@ -39,11 +41,11 @@ function CurrencyPickerModal({
 }: {
   visible: boolean;
   selected: Currency;
-  exclude: string;
+  exclude?: string;
   onSelect: (c: Currency) => void;
   onClose: () => void;
 }) {
-  const options = CURRENCIES.filter(c => c.code !== exclude);
+  const options = exclude ? CURRENCIES.filter(c => c.code !== exclude) : CURRENCIES;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose} />
@@ -76,6 +78,7 @@ function CurrencyPickerModal({
 
 export default function SendScreen() {
   const { token } = useAuth();
+  const [mode, setMode] = useState<TransferMode>('international');
   const [sendCurr, setSendCurr] = useState<Currency>(DEFAULT_SEND);
   const [receiveCurr, setReceiveCurr] = useState<Currency>(DEFAULT_RECEIVE);
   const [pickerFor, setPickerFor] = useState<'send' | 'receive' | null>(null);
@@ -85,6 +88,9 @@ export default function SendScreen() {
   const [quoteError, setQuoteError] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const numericAmount = Number(amount || 0);
+
+  // In domestic mode receive = send
+  const effectiveReceive = mode === 'domestic' ? sendCurr : receiveCurr;
 
   const fetchQuote = useCallback(async (amt: number, send: Currency, receive: Currency) => {
     if (!token || amt <= 0) { setQuote(null); setQuoteError(''); return; }
@@ -104,9 +110,16 @@ export default function SendScreen() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchQuote(numericAmount, sendCurr, receiveCurr), 700);
+    debounceRef.current = setTimeout(() => fetchQuote(numericAmount, sendCurr, effectiveReceive), 700);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [numericAmount, sendCurr, receiveCurr, fetchQuote]);
+  }, [numericAmount, sendCurr, effectiveReceive, fetchQuote]);
+
+  const handleModeSwitch = (m: TransferMode) => {
+    setMode(m);
+    setAmount('');
+    setQuote(null);
+    setQuoteError('');
+  };
 
   const handleSwap = () => {
     setSendCurr(receiveCurr);
@@ -117,7 +130,7 @@ export default function SendScreen() {
 
   const handleSelectSend = (c: Currency) => {
     setSendCurr(c);
-    if (c.code === receiveCurr.code) {
+    if (mode === 'international' && c.code === receiveCurr.code) {
       setReceiveCurr(CURRENCIES.find(x => x.code !== c.code)!);
     }
     setQuote(null);
@@ -144,26 +157,46 @@ export default function SendScreen() {
           <View style={{ width: 22 }} />
         </View>
 
-        {/* Rate card */}
-        <View style={styles.rateCard}>
-          <View style={styles.rateHeader}>
-            <Text style={styles.rateLabel}>EXCHANGE RATE</Text>
-            <Ionicons name="trending-up-outline" size={18} color={Colors.primary} />
-          </View>
-          {quote ? (
-            <>
-              <Text style={styles.rateValue}>
-                1 {sendCurr.code} = {quote.fx_rate.toFixed(4)} {receiveCurr.code}
-              </Text>
-              <Text style={styles.rateSub}>Rate locked for 1 minute</Text>
-            </>
-          ) : (
-            <Text style={styles.rateValue}>Enter amount to see rate</Text>
-          )}
+        {/* Mode toggle */}
+        <View style={styles.modeToggle}>
+          <TouchableOpacity
+            style={[styles.modeBtn, mode === 'international' && styles.modeBtnActive]}
+            onPress={() => handleModeSwitch('international')}
+          >
+            <Ionicons name="globe-outline" size={15} color={mode === 'international' ? '#fff' : Colors.textSecondary} />
+            <Text style={[styles.modeBtnText, mode === 'international' && styles.modeBtnTextActive]}>International</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeBtn, mode === 'domestic' && styles.modeBtnActive]}
+            onPress={() => handleModeSwitch('domestic')}
+          >
+            <Ionicons name="home-outline" size={15} color={mode === 'domestic' ? '#fff' : Colors.textSecondary} />
+            <Text style={[styles.modeBtnText, mode === 'domestic' && styles.modeBtnTextActive]}>Domestic</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* From */}
-        <Text style={styles.fieldLabel}>From</Text>
+        {/* Rate card — international only */}
+        {mode === 'international' && (
+          <View style={styles.rateCard}>
+            <View style={styles.rateHeader}>
+              <Text style={styles.rateLabel}>EXCHANGE RATE</Text>
+              <Ionicons name="trending-up-outline" size={18} color={Colors.primary} />
+            </View>
+            {quote ? (
+              <>
+                <Text style={styles.rateValue}>
+                  1 {sendCurr.code} = {quote.fx_rate.toFixed(4)} {receiveCurr.code}
+                </Text>
+                <Text style={styles.rateSub}>Rate locked for 1 minute</Text>
+              </>
+            ) : (
+              <Text style={styles.rateValue}>Enter amount to see rate</Text>
+            )}
+          </View>
+        )}
+
+        {/* Currency selector */}
+        <Text style={styles.fieldLabel}>{mode === 'domestic' ? 'Currency' : 'From'}</Text>
         <TouchableOpacity style={styles.selectBox} onPress={() => setPickerFor('send')}>
           <Text style={styles.currencyFlagLg}>{sendCurr.flag}</Text>
           <View style={{ flex: 1 }}>
@@ -173,23 +206,33 @@ export default function SendScreen() {
           <Ionicons name="chevron-down" size={18} color={Colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* Swap */}
-        <View style={styles.swapWrap}>
-          <TouchableOpacity style={styles.swapBtn} onPress={handleSwap}>
-            <Ionicons name="swap-vertical" size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        {/* International: swap + receive currency */}
+        {mode === 'international' && (
+          <>
+            <View style={styles.swapWrap}>
+              <TouchableOpacity style={styles.swapBtn} onPress={handleSwap}>
+                <Ionicons name="swap-vertical" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.fieldLabel}>To</Text>
+            <TouchableOpacity style={styles.selectBox} onPress={() => setPickerFor('receive')}>
+              <Text style={styles.currencyFlagLg}>{receiveCurr.flag}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.selectCode}>{receiveCurr.code}</Text>
+                <Text style={styles.selectName}>{receiveCurr.name}</Text>
+              </View>
+              <Ionicons name="chevron-down" size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </>
+        )}
 
-        {/* To */}
-        <Text style={styles.fieldLabel}>To</Text>
-        <TouchableOpacity style={styles.selectBox} onPress={() => setPickerFor('receive')}>
-          <Text style={styles.currencyFlagLg}>{receiveCurr.flag}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.selectCode}>{receiveCurr.code}</Text>
-            <Text style={styles.selectName}>{receiveCurr.name}</Text>
+        {/* Domestic: same currency badge */}
+        {mode === 'domestic' && (
+          <View style={styles.domesticBadge}>
+            <Ionicons name="arrow-down" size={14} color={Colors.primary} />
+            <Text style={styles.domesticBadgeText}>Sending within {sendCurr.country} · {sendCurr.code}</Text>
           </View>
-          <Ionicons name="chevron-down" size={18} color={Colors.textSecondary} />
-        </TouchableOpacity>
+        )}
 
         {/* Amount */}
         <Text style={styles.fieldLabel}>Amount to send</Text>
@@ -213,7 +256,7 @@ export default function SendScreen() {
             <>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Recipient receives</Text>
-                <Text style={styles.summaryValue}>{Number(quote.receive_amount).toLocaleString()} {receiveCurr.code}</Text>
+                <Text style={styles.summaryValue}>{Number(quote.receive_amount).toLocaleString()} {effectiveReceive.code}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Transfer fee</Text>
@@ -243,11 +286,14 @@ export default function SendScreen() {
               sendAmount: numericAmount.toFixed(2),
               receiveAmount: String(quote!.receive_amount),
               feeAmount: String(quote!.fee_amount),
+              transferFee: String(quote!.transfer_fee ?? 0),
+              exchangeFee: String(quote!.exchange_fee ?? 0),
+              totalCost: String(quote!.total_cost),
               fxRate: String(quote!.fx_rate),
               sendCurrency: sendCurr.code,
-              receiveCurrency: receiveCurr.code,
+              receiveCurrency: effectiveReceive.code,
               sendCountry: sendCurr.country,
-              receiveCountry: receiveCurr.country,
+              receiveCountry: effectiveReceive.country,
               transferType: quote!.transfer_type,
               isLinkedRecipient: 'false',
             },
@@ -262,7 +308,7 @@ export default function SendScreen() {
       <CurrencyPickerModal
         visible={pickerFor === 'send'}
         selected={sendCurr}
-        exclude={receiveCurr.code}
+        exclude={mode === 'international' ? receiveCurr.code : undefined}
         onSelect={handleSelectSend}
         onClose={() => setPickerFor(null)}
       />
@@ -324,6 +370,23 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   secureText: { textAlign: 'center', color: '#98A2B3', fontSize: 12, marginTop: 12 },
+  modeToggle: {
+    flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14,
+    padding: 4, marginBottom: 18, borderWidth: 1, borderColor: '#EEF2F6',
+  },
+  modeBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 10, borderRadius: 11,
+  },
+  modeBtnActive: { backgroundColor: Colors.primary },
+  modeBtnText: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary },
+  modeBtnTextActive: { color: '#fff' },
+  domesticBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.primarySoft, borderRadius: 12,
+    padding: 12, marginTop: 10,
+  },
+  domesticBadgeText: { fontSize: 14, fontWeight: '600', color: Colors.primaryDark },
   // Modal
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {

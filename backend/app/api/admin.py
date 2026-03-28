@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, time
 from decimal import Decimal
 
 from app.db.database import get_db
@@ -9,11 +9,12 @@ from app.api.deps import require_admin
 from app.models.user import User
 from app.models.kyc import KYCProfile
 from app.models.transfer import Transfer
+from app.models.wallet import Wallet
 from app.schemas.kyc import KYCOut, AdminKYCDecision
 from app.schemas.transfer import TransferOut, TransferStatusUpdate
 from app.services.transfer_service import validate_transition
 from app.services import pricing_engine as _pe
-from app.services.pricing_engine import get_rate, _FALLBACK, _CACHE
+from app.services.pricing_engine import get_rate, _FALLBACK, _USD_RATES
 
 from pydantic import BaseModel, EmailStr
 from app.core.security import hash_password
@@ -63,6 +64,15 @@ class StatsOut(BaseModel):
     fees_earned_today: float
 
 
+class PeriodStatsOut(BaseModel):
+    from_date: date | None
+    to_date: date | None
+    transfer_count: int
+    completed_count: int
+    total_volume: float
+    total_fees: float
+
+
 class RateOut(BaseModel):
     pair: str
     rate: float
@@ -90,7 +100,8 @@ class KYCAdminOut(KYCOut):
 
 @router.get("/stats", response_model=StatsOut)
 def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    today = date.today()
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow_start = today_start + timedelta(days=1)
 
     total_users = db.query(func.count(User.id)).scalar() or 0
     active_users = db.query(func.count(User.id)).filter(User.is_active == True).scalar() or 0
@@ -102,27 +113,44 @@ def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin
     total_transfers = db.query(func.count(Transfer.id)).scalar() or 0
     transfers_today = (
         db.query(func.count(Transfer.id))
-        .filter(func.date(Transfer.created_at) == today)
+        .filter(Transfer.created_at >= today_start, Transfer.created_at < tomorrow_start)
         .scalar() or 0
     )
 
-    volume_today = db.query(func.sum(Transfer.send_amount)).filter(
-        func.date(Transfer.created_at) == today
-    ).scalar() or 0
-
+    volume_today = (
+        db.query(func.sum(Transfer.send_amount))
+        .filter(Transfer.created_at >= today_start, Transfer.created_at < tomorrow_start)
+        .scalar() or 0
+    )
     volume_total = db.query(func.sum(Transfer.send_amount)).scalar() or 0
 
-    failed_transfers = db.query(func.count(Transfer.id)).filter(Transfer.status == "failed").scalar() or 0
+    failed_transfers = (
+        db.query(func.count(Transfer.id))
+        .filter(Transfer.status.in_(["FAILED", "failed"]))
+        .scalar() or 0
+    )
     cancelled_transfers = (
         db.query(func.count(Transfer.id))
-        .filter(Transfer.status.in_(["cancelled", "CANCELLED"]))
+        .filter(Transfer.status.in_(["CANCELLED", "cancelled"]))
         .scalar() or 0
     )
 
-    total_fees_earned = db.query(func.sum(Transfer.zuripay_fee)).scalar() or 0
+    # Fees earned from successful transfers only (failed/cancelled are refunded).
+    # "received" and "SENT" are also successful terminal/in-flight states.
+    SUCCESSFUL = ("COMPLETED", "received", "SENT")
+
+    total_fees_earned = (
+        db.query(func.sum(Transfer.fee_used))
+        .filter(Transfer.status.in_(SUCCESSFUL))
+        .scalar() or 0
+    )
     fees_earned_today = (
-        db.query(func.sum(Transfer.zuripay_fee))
-        .filter(func.date(Transfer.created_at) == today)
+        db.query(func.sum(Transfer.fee_used))
+        .filter(
+            Transfer.status.in_(SUCCESSFUL),
+            Transfer.created_at >= today_start,
+            Transfer.created_at < tomorrow_start,
+        )
         .scalar() or 0
     )
 
@@ -143,16 +171,64 @@ def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin
     )
 
 
+# ── Period stats (date-range aggregation) ────────────────────────────────────
+
+@router.get("/stats/period", response_model=PeriodStatsOut)
+def get_period_stats(
+    from_date: date | None = Query(None, description="Start date inclusive (YYYY-MM-DD)"),
+    to_date: date | None = Query(None, description="End date inclusive (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Return transfer count, volume and fees earned for any date range."""
+    def _apply_date_filter(q):
+        if from_date:
+            q = q.filter(Transfer.created_at >= datetime.combine(from_date, time.min))
+        if to_date:
+            q = q.filter(Transfer.created_at < datetime.combine(to_date + timedelta(days=1), time.min))
+        return q
+
+    SUCCESSFUL = ("COMPLETED", "received", "SENT")
+
+    transfer_count = _apply_date_filter(db.query(func.count(Transfer.id))).scalar() or 0
+    completed_count = (
+        _apply_date_filter(db.query(func.count(Transfer.id)))
+        .filter(Transfer.status.in_(SUCCESSFUL))
+        .scalar() or 0
+    )
+    # Volume = all transfers in period (shows total attempted, not just successful)
+    total_volume = (
+        _apply_date_filter(db.query(func.sum(Transfer.send_amount)))
+        .scalar() or 0
+    )
+    # Fees = only successful transfers (fees are refunded on failure)
+    total_fees = (
+        _apply_date_filter(db.query(func.sum(Transfer.fee_used)))
+        .filter(Transfer.status.in_(SUCCESSFUL))
+        .scalar() or 0
+    )
+
+    return PeriodStatsOut(
+        from_date=from_date,
+        to_date=to_date,
+        transfer_count=transfer_count,
+        completed_count=completed_count,
+        total_volume=float(total_volume),
+        total_fees=float(total_fees),
+    )
+
+
 # ── Users ─────────────────────────────────────────────────────────────────────
 
 @router.get("/users", response_model=list[UserAdminOut])
 def list_users(
+    response: Response,
     search: str | None = Query(None),
     is_active: bool | None = Query(None),
     is_verified: bool | None = Query(None),
     role: str | None = Query(None),
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
@@ -166,7 +242,11 @@ def list_users(
         q = q.filter(User.is_verified == is_verified)
     if role:
         q = q.filter(User.role == role)
-    return q.order_by(User.id.desc()).offset(skip).limit(limit).all()
+    total = q.count()
+    items = q.order_by(User.id.desc()).offset(skip).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
+    response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+    return items
 
 
 @router.post("/users", response_model=UserAdminOut, status_code=201)
@@ -233,16 +313,20 @@ def update_user_status(
 
 @router.get("/kyc", response_model=list[KYCAdminOut])
 def list_kyc(
+    response: Response,
     status: str | None = None,
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
     q = db.query(KYCProfile)
     if status:
         q = q.filter(KYCProfile.status == status)
+    total = q.count()
     records = q.order_by(KYCProfile.id.desc()).offset(skip).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
+    response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
 
     result = []
     for k in records:
@@ -296,10 +380,13 @@ def reject_kyc(kyc_id: int, payload: AdminKYCDecision, db: Session = Depends(get
 
 @router.get("/transfers", response_model=list[TransferOut])
 def list_transfers(
+    response: Response,
     status: str | None = None,
     user_id: int | None = None,
-    skip: int = 0,
-    limit: int = 100,
+    from_date: date | None = Query(None, description="Filter from this date inclusive (YYYY-MM-DD)"),
+    to_date: date | None = Query(None, description="Filter to this date inclusive (YYYY-MM-DD)"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
@@ -308,7 +395,15 @@ def list_transfers(
         q = q.filter(Transfer.status == status)
     if user_id:
         q = q.filter(Transfer.user_id == user_id)
-    return q.order_by(Transfer.id.desc()).offset(skip).limit(limit).all()
+    if from_date:
+        q = q.filter(Transfer.created_at >= datetime.combine(from_date, time.min))
+    if to_date:
+        q = q.filter(Transfer.created_at < datetime.combine(to_date + timedelta(days=1), time.min))
+    total = q.count()
+    items = q.order_by(Transfer.id.desc()).offset(skip).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
+    response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+    return items
 
 
 @router.patch("/transfers/{transfer_id}/status", response_model=TransferOut)
@@ -327,8 +422,15 @@ def update_transfer_status(
     t.status = payload.status
     t.updated_at = datetime.utcnow()
 
-    if payload.status == "failed":
+    if payload.status in ("failed", "FAILED"):
         t.fail_reason = payload.fail_reason or "Unknown failure"
+        # Refund total_payable back to the sender's wallet
+        wallet = db.query(Wallet).filter(
+            Wallet.user_id == t.user_id,
+            Wallet.currency == t.send_currency.upper(),
+        ).first()
+        if wallet and t.total_payable:
+            wallet.balance = Decimal(str(wallet.balance)) + Decimal(str(t.total_payable))
 
     db.commit()
     db.refresh(t)
@@ -353,11 +455,14 @@ def list_rates(admin: User = Depends(require_admin)):
         result.append(RateOut(pair=f"{pair[0]}/{pair[1]}", rate=float(rate), is_override=True))
         seen.add(pair)
 
-    # 2. Cached live rates
-    for pair, (rate, _) in _CACHE.items():
+    # 2. Live bulk-fetched rates (cross-calculated through USD)
+    from app.services.pricing_engine import _live_cross_rate
+    for pair, rate in _FALLBACK.items():
         if pair not in seen:
-            result.append(RateOut(pair=f"{pair[0]}/{pair[1]}", rate=float(rate), is_override=False))
-            seen.add(pair)
+            live = _live_cross_rate(pair[0], pair[1])
+            if live is not None:
+                result.append(RateOut(pair=f"{pair[0]}/{pair[1]}", rate=float(live), is_override=False))
+                seen.add(pair)
 
     # 3. Fallback rates (show ones not already covered)
     for pair, rate in _FALLBACK.items():

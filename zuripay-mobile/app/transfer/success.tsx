@@ -1,7 +1,7 @@
 import React from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
 
@@ -22,13 +22,37 @@ export default function SuccessScreen() {
   const createdAt = params.createdAt ? new Date(params.createdAt).toLocaleString() : '—';
   const status = params.status ?? 'CREATED';
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: [
+          '--- ZuriPay Transfer Receipt ---',
+          `Transaction ID: #ZP-${transferId}`,
+          `Date: ${createdAt}`,
+          `Status: ${status}`,
+          `Recipient: ${recipientName}`,
+          `Amount Sent: ${Number(sendAmount).toLocaleString()} ${sendCurrency}`,
+          `Exchange Rate: 1 ${sendCurrency} = ${Number(fxRate).toFixed(4)} ${receiveCurrency}`,
+          `Recipient Receives: ${Number(receiveAmount).toLocaleString()} ${receiveCurrency}`,
+          '',
+          'Secured by ZuriPay',
+        ].join('\n'),
+        title: `ZuriPay Receipt #ZP-${transferId}`,
+      });
+    } catch (e: any) {
+      Alert.alert('Share failed', e.message);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <View style={{ width: 22 }} />
           <Text style={styles.title}>Receipt</Text>
-          <TouchableOpacity><Ionicons name="share-social-outline" size={20} color={Colors.text} /></TouchableOpacity>
+          <TouchableOpacity onPress={handleShare}>
+            <Ionicons name="share-social-outline" size={20} color={Colors.text} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.successIconWrap}>

@@ -15,11 +15,13 @@ class QuoteResponse(BaseModel):
     id: int
     send_amount: float
     fx_rate: float
-    fee_amount: float
+    fee_amount: float          # total fee (transfer fee + exchange fee)
+    transfer_fee: float        # flat transfer fee component
+    exchange_fee: float        # exchange/conversion fee component
     receive_amount: float
-    total_cost: float
-    zuripay_fee: float      # fee ZuriPay earns on this transaction
-    transfer_type: str      # "international" | "domestic_free" | "domestic"
+    total_cost: float          # send_amount + fee_amount
+    zuripay_fee: float
+    transfer_type: str         # "international" | "domestic_free" | "domestic"
     expires_at: datetime
     status: str
 

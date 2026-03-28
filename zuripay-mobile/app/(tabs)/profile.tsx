@@ -86,13 +86,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleLanguage = () => {
-    Alert.alert('Language', 'Language selection coming soon.\n\nCurrently supported: English');
-  };
-
-  const handleChangePhone = () => {
-    Alert.alert('Change Phone', 'Phone number change coming soon. Contact support@zuripay.com to update your phone number.');
-  };
 
   const handleTerms = () => {
     Alert.alert('Terms & Conditions', 'Our full T&C are available at zuripay.com/terms');
@@ -154,7 +147,7 @@ export default function ProfileScreen() {
           icon="language-outline"
           title="Language"
           subtitle="App language"
-          onPress={handleLanguage}
+          onPress={() => router.push('/settings/language')}
           value="English"
         />
         <Row
@@ -170,7 +163,7 @@ export default function ProfileScreen() {
           icon="lock-closed-outline"
           title="Change Password"
           subtitle="Update your login password"
-          onPress={() => router.push('/settings/security')}
+          onPress={() => router.push('/settings/change-password')}
         />
         <Row
           icon="keypad-outline"
@@ -188,7 +181,7 @@ export default function ProfileScreen() {
           icon="phone-portrait-outline"
           title="Change Phone Number"
           subtitle={user?.phone ?? 'Not set'}
-          onPress={handleChangePhone}
+          onPress={() => router.push('/settings/change-phone')}
         />
 
         {/* Support */}

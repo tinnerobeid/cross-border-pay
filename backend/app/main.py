@@ -13,11 +13,20 @@ from app.api.admin import router as admin_router
 from app.api.recipients import router as recipients_router
 from app.api.wallets import router as wallets_router
 from app.api.linked_accounts import router as linked_accounts_router
+from app.api.webhooks import router as webhooks_router
 
 from app.models import user, kyc, transfer  # noqa: F401
 from app.models import recipient, wallet, linked_account  # noqa: F401
 
 from fastapi.middleware.cors import CORSMiddleware
+
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+    _SLOWAPI = True
+except ImportError:
+    _SLOWAPI = False
 
 # Configure logging
 logging.basicConfig(
@@ -27,6 +36,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title=settings.APP_NAME)
+
+if _SLOWAPI:
+    limiter = Limiter(key_func=get_remote_address, default_limits=["300/minute"])
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    logger.info("slowapi rate limiting enabled")
 
 # Global exception handler for validation errors
 @app.exception_handler(RequestValidationError)
@@ -52,14 +67,8 @@ async def general_exception_handler(request: Request, exc: Exception):
 # Add CORS middleware BEFORE routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",   # Vite admin dashboard
-        "http://localhost:3000",   # CRA / Next.js dev
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "http://10.0.2.2:8000",    # Android emulator
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -76,6 +85,7 @@ app.include_router(admin_router)
 app.include_router(recipients_router)
 app.include_router(wallets_router)
 app.include_router(linked_accounts_router)
+app.include_router(webhooks_router)
 
 @app.get("/")
 def health():

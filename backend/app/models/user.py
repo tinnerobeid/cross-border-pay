@@ -16,6 +16,9 @@ class User(Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)  # New field for email verification
     otp_code: Mapped[str] = mapped_column(String(6), nullable=True)  # OTP code
     otp_expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)  # OTP expiration
+    country_of_residence: Mapped[str] = mapped_column(String(100), nullable=True)
+    pin_hash: Mapped[str] = mapped_column(String(255), nullable=True)  # 6-digit transaction PIN
+    pending_phone: Mapped[str] = mapped_column(String(50), nullable=True)  # staged phone for change flow
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     kyc_profile = relationship("KYCProfile", back_populates="user", uselist=False)

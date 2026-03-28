@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     AT_USERNAME: str = ""          # your Africa's Talking username
     AT_API_KEY: str = ""           # your API key from the dashboard
     AT_SENDER_ID: str = "ZuriPay" # optional shortcode/sender name
+    AT_PRODUCT_NAME: str = "ZuriPay"  # AT Payments product name
+
+    # ── Webhooks ──────────────────────────────────────────────────────────────
+    WEBHOOK_SECRET: str = ""  # shared secret for HMAC webhook verification
 
     # Environment
     ENVIRONMENT: str = "development"

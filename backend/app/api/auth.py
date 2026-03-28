@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel
@@ -14,6 +14,13 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.api.deps import get_current_user
 from app.services.notifications import dispatch_otp
 from app.models.wallet import Wallet, currency_from_phone
+
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+    _limiter = Limiter(key_func=get_remote_address)
+except ImportError:
+    _limiter = None
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -61,7 +68,8 @@ def first_setup(payload: SetupRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/register", response_model=UserOut)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+@(_limiter.limit("5/minute") if _limiter else lambda f: f)
+def register(request: Request, payload: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -81,6 +89,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
             is_verified=False,
             otp_code=otp_code,
             otp_expires_at=otp_expires_at,
+            country_of_residence=payload.country_of_residence,
         )
         db.add(user)
         db.commit()
@@ -105,7 +114,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/send-otp")
-def send_otp(payload: SendOTPRequest, db: Session = Depends(get_db)):
+@(_limiter.limit("3/minute") if _limiter else lambda f: f)
+def send_otp(request: Request, payload: SendOTPRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -164,7 +174,8 @@ def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+@(_limiter.limit("10/minute") if _limiter else lambda f: f)
+def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -204,3 +215,120 @@ def delete_account(user: User = Depends(get_current_user), db: Session = Depends
     user.is_active = False
     db.commit()
     return {"message": "Account deactivated successfully"}
+
+
+# ── Password change ────────────────────────────────────────────────────────────
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.patch("/password")
+def change_password(
+    payload: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+    user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+
+# ── PIN management ─────────────────────────────────────────────────────────────
+
+class SetPinRequest(BaseModel):
+    current_pin: str | None = None   # required only when user already has a PIN
+    new_pin: str
+    confirm_pin: str
+
+
+@router.patch("/pin")
+def change_pin(
+    payload: SetPinRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if len(payload.new_pin) != 6 or not payload.new_pin.isdigit():
+        raise HTTPException(status_code=400, detail="PIN must be exactly 6 digits")
+    if payload.new_pin != payload.confirm_pin:
+        raise HTTPException(status_code=400, detail="PINs do not match")
+
+    # If user already has a PIN, verify the current one
+    if user.pin_hash:
+        if not payload.current_pin:
+            raise HTTPException(status_code=400, detail="Current PIN is required")
+        if not verify_password(payload.current_pin, user.pin_hash):
+            raise HTTPException(status_code=400, detail="Current PIN is incorrect")
+
+    user.pin_hash = hash_password(payload.new_pin)
+    db.commit()
+    return {"message": "PIN updated successfully", "has_pin": True}
+
+
+@router.get("/pin/status")
+def pin_status(user: User = Depends(get_current_user)):
+    return {"has_pin": user.pin_hash is not None}
+
+
+# ── Phone change ───────────────────────────────────────────────────────────────
+
+class PhoneChangeRequest(BaseModel):
+    new_phone: str
+
+
+class PhoneVerifyRequest(BaseModel):
+    otp_code: str
+
+
+@router.post("/phone/request")
+def request_phone_change(
+    payload: PhoneChangeRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Stage a new phone number and send an OTP to verify it."""
+    new_phone = payload.new_phone.strip()
+    if not new_phone:
+        raise HTTPException(status_code=400, detail="Phone number is required")
+    if db.query(User).filter(User.phone == new_phone, User.id != user.id).first():
+        raise HTTPException(status_code=409, detail="This phone number is already in use by another account")
+
+    otp_code = ''.join(random.choices(string.digits, k=6))
+    user.pending_phone = new_phone
+    user.otp_code = otp_code
+    user.otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
+    db.commit()
+
+    result = dispatch_otp(email=user.email, otp=otp_code, phone=new_phone, full_name=user.full_name)
+    channels = ", ".join(result["channels"])
+    return {"message": f"Verification code sent via {channels}"}
+
+
+@router.post("/phone/verify")
+def verify_phone_change(
+    payload: PhoneVerifyRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Confirm OTP and apply the staged phone number."""
+    if not user.pending_phone:
+        raise HTTPException(status_code=400, detail="No phone change in progress")
+    if not user.otp_code or not user.otp_expires_at:
+        raise HTTPException(status_code=400, detail="No OTP found. Request a new one.")
+    if datetime.utcnow() > user.otp_expires_at:
+        raise HTTPException(status_code=400, detail="OTP has expired. Request a new one.")
+    if user.otp_code != payload.otp_code:
+        raise HTTPException(status_code=400, detail="Invalid OTP code")
+
+    user.phone = user.pending_phone
+    user.pending_phone = None
+    user.otp_code = None
+    user.otp_expires_at = None
+    db.commit()
+
+    return {"message": "Phone number updated successfully", "phone": user.phone}

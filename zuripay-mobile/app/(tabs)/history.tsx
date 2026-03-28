@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Colors from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 import { getTransfers, TransferOut } from '../../services/api';
+
+const PAGE_SIZE = 20;
 
 type Tab = 'all' | 'international' | 'domestic';
 
@@ -25,16 +27,48 @@ export default function HistoryScreen() {
   const [transfers, setTransfers] = useState<TransferOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [tab, setTab] = useState<Tab>('all');
+  const skipRef = useRef(0);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (reset = false) => {
     if (!token) return;
-    try { const data = await getTransfers(token); setTransfers(data); }
-    catch { /* silent */ }
-    finally { setLoading(false); setRefreshing(false); }
+    const skip = reset ? 0 : skipRef.current;
+    try {
+      const data = await getTransfers(token, skip, PAGE_SIZE);
+      if (reset) {
+        setTransfers(data);
+        skipRef.current = data.length;
+      } else {
+        setTransfers(prev => [...prev, ...data]);
+        skipRef.current = skip + data.length;
+      }
+      setHasMore(data.length === PAGE_SIZE);
+    } catch { /* silent */ }
+    finally {
+      setLoading(false);
+      setRefreshing(false);
+      setLoadingMore(false);
+    }
   }, [token]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(true); }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(true);
+  };
+
+  const onEndReached = () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    load(false);
+  };
+
+  const onTabChange = (t: Tab) => {
+    setTab(t);
+  };
 
   const filtered = transfers.filter(tx => {
     if (tab === 'international') return isInternational(tx);
@@ -42,93 +76,116 @@ export default function HistoryScreen() {
     return true;
   });
 
+  const renderItem = ({ item: tx }: { item: TransferOut }) => (
+    <View style={styles.txCard}>
+      <View style={styles.txLeft}>
+        <View style={[styles.txIcon, isInternational(tx) ? {} : { backgroundColor: '#FFF4E5' }]}>
+          <Ionicons
+            name={isInternational(tx) ? 'globe-outline' : 'phone-portrait-outline'}
+            size={18}
+            color={isInternational(tx) ? Colors.primary : '#E07B00'}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.txTitle}>{tx.send_currency} → {tx.receive_currency}</Text>
+          <Text style={styles.txRecipient}>{tx.recipient_name}</Text>
+          <Text style={styles.txDate}>{new Date(tx.created_at).toLocaleDateString()}</Text>
+        </View>
+      </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={styles.txAmount}>-{Number(tx.send_amount).toLocaleString()} {tx.send_currency}</Text>
+        <Text style={styles.txReceive}>+{Number(tx.receive_amount ?? 0).toLocaleString()} {tx.receive_currency}</Text>
+        <View style={[styles.statusBadge, { borderColor: statusColor(tx.status) }]}>
+          <Text style={[styles.statusText, { color: statusColor(tx.status) }]}>{tx.status}</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderEmpty = () => {
+    if (loading) return null;
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name="receipt-outline" size={44} color={Colors.textSecondary} />
+        <Text style={styles.emptyText}>
+          {tab === 'domestic' ? 'No domestic transfers yet' :
+           tab === 'international' ? 'No international transfers yet' :
+           'No transactions yet'}
+        </Text>
+        <Text style={styles.emptySubtext}>
+          {tab === 'domestic' ? 'Domestic transfers will appear here' : 'Your transfers will appear here'}
+        </Text>
+        {tab !== 'domestic' && (
+          <TouchableOpacity style={styles.sendBtn} onPress={() => router.push('/(tabs)/send')}>
+            <Text style={styles.sendBtnText}>Send Money</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return <ActivityIndicator color={Colors.primary} style={{ marginVertical: 16 }} />;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} colors={[Colors.primary]} />}
-      >
+      <View style={styles.header}>
         <Text style={styles.title}>Transaction History</Text>
+      </View>
 
-        {/* Tabs */}
-        <View style={styles.tabBar}>
-          {(['all', 'international', 'domestic'] as Tab[]).map(t => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.tabBtn, tab === t && styles.tabBtnActive]}
-              onPress={() => setTab(t)}
-            >
-              <Text style={[styles.tabBtnText, tab === t && styles.tabBtnTextActive]}>
-                {t === 'all' ? 'All' : t === 'international' ? 'International' : 'Domestic'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* Tabs */}
+      <View style={styles.tabBar}>
+        {(['all', 'international', 'domestic'] as Tab[]).map(t => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.tabBtn, tab === t && styles.tabBtnActive]}
+            onPress={() => onTabChange(t)}
+          >
+            <Text style={[styles.tabBtnText, tab === t && styles.tabBtnTextActive]}>
+              {t === 'all' ? 'All' : t === 'international' ? 'International' : 'Domestic'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        {loading ? (
-          <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} />
-        ) : filtered.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="receipt-outline" size={44} color={Colors.textSecondary} />
-            <Text style={styles.emptyText}>
-              {tab === 'domestic' ? 'No domestic transfers yet' :
-               tab === 'international' ? 'No international transfers yet' :
-               'No transactions yet'}
-            </Text>
-            <Text style={styles.emptySubtext}>
-              {tab === 'domestic' ? 'Domestic transfers will appear here' : 'Your transfers will appear here'}
-            </Text>
-            {tab !== 'domestic' && (
-              <TouchableOpacity style={styles.sendBtn} onPress={() => router.push('/(tabs)/send')}>
-                <Text style={styles.sendBtnText}>Send Money</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          filtered.map(tx => (
-            <View key={tx.id} style={styles.txCard}>
-              <View style={styles.txLeft}>
-                <View style={[styles.txIcon, isInternational(tx) ? {} : { backgroundColor: '#FFF4E5' }]}>
-                  <Ionicons
-                    name={isInternational(tx) ? 'globe-outline' : 'phone-portrait-outline'}
-                    size={18}
-                    color={isInternational(tx) ? Colors.primary : '#E07B00'}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.txTitle}>{tx.send_currency} → {tx.receive_currency}</Text>
-                  <Text style={styles.txRecipient}>{tx.recipient_name}</Text>
-                  <Text style={styles.txDate}>{new Date(tx.created_at).toLocaleDateString()}</Text>
-                </View>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.txAmount}>-{Number(tx.send_amount).toLocaleString()} {tx.send_currency}</Text>
-                <Text style={styles.txReceive}>+{Number(tx.receive_amount ?? 0).toLocaleString()} {tx.receive_currency}</Text>
-                <View style={[styles.statusBadge, { borderColor: statusColor(tx.status) }]}>
-                  <Text style={[styles.statusText, { color: statusColor(tx.status) }]}>{tx.status}</Text>
-                </View>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
+      {loading ? (
+        <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={item => String(item.id)}
+          renderItem={renderItem}
+          ListEmptyComponent={renderEmpty}
+          ListFooterComponent={renderFooter}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.3}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 20, paddingBottom: 90 },
-  title: { fontSize: 22, fontWeight: '800', color: Colors.text, marginBottom: 16 },
+  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
+  title: { fontSize: 22, fontWeight: '800', color: Colors.text },
   tabBar: {
     flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14,
-    padding: 4, marginBottom: 16, borderWidth: 1, borderColor: '#EEF2F6',
+    padding: 4, marginHorizontal: 20, marginBottom: 12,
+    borderWidth: 1, borderColor: '#EEF2F6',
   },
   tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 11, alignItems: 'center' },
   tabBtnActive: { backgroundColor: Colors.primarySoft },
   tabBtnText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   tabBtnTextActive: { color: Colors.primary, fontWeight: '800' },
+  listContent: { paddingHorizontal: 20, paddingBottom: 90 },
   emptyState: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 18, fontWeight: '700', color: Colors.text, marginTop: 14 },
   emptySubtext: { fontSize: 14, color: Colors.textSecondary, marginTop: 6 },

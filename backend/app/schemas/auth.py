@@ -27,11 +27,23 @@ def validate_phone_number(v: str | None) -> str | None:
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
+SUPPORTED_RESIDENCE_COUNTRIES = {
+    'Tanzania', 'Kenya', 'Rwanda', 'Uganda', 'South Korea', 'Burundi',
+}
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     full_name: str
     password: str
     phone: str | None = None
+    country_of_residence: str | None = None
+
+    @field_validator("country_of_residence")
+    @classmethod
+    def validate_residence(cls, v: str | None) -> str | None:
+        if v and v not in SUPPORTED_RESIDENCE_COUNTRIES:
+            raise ValueError(f"Country of residence must be one of: {', '.join(sorted(SUPPORTED_RESIDENCE_COUNTRIES))}")
+        return v
 
     @field_validator("full_name")
     @classmethod
