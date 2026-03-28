@@ -10,9 +10,15 @@ from app.services.storage_service import save_upload
 
 router = APIRouter(prefix="/kyc", tags=["KYC"])
 
-@router.get("/me", response_model=KYCOut | None)
+@router.get("/", response_model=KYCOut | None)
 def get_my_kyc(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Return the logged‑in user’s KYC profile (alias for `/kyc/me`)."""
     return db.query(KYCProfile).filter(KYCProfile.user_id == user.id).first()
+
+# keep the old `/me` path for backward compatibility
+@router.get("/me", response_model=KYCOut | None)
+def get_my_kyc_me(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return get_my_kyc(db, user)
 
 @router.post("/submit", response_model=KYCOut)
 async def submit_kyc(

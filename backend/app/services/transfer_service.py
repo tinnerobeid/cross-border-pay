@@ -1,15 +1,29 @@
 from fastapi import HTTPException
 
-ALLOWED_STATUSES = {"initiated", "processing", "sent", "received", "failed", "cancelled"}
+ALLOWED_STATUSES = {
+    "CREATED",
+    "initiated",
+    "payment_pending",
+    "processing",
+    "sent",
+    "received",
+    "failed",
+    "cancelled",
+    "CANCELLED",
+}
 
 ALLOWED_TRANSITIONS = {
-    "initiated": {"processing", "failed", "cancelled"},
+    "CREATED": {"initiated", "payment_pending", "processing", "failed", "CANCELLED", "cancelled"},
+    "initiated": {"payment_pending", "processing", "failed", "cancelled", "CANCELLED"},
+    "payment_pending": {"processing", "failed", "cancelled", "CANCELLED"},
     "processing": {"sent", "failed"},
     "sent": {"received", "failed"},
     "received": set(),
     "failed": set(),
     "cancelled": set(),
+    "CANCELLED": set(),
 }
+
 
 def validate_transition(current: str, new: str) -> None:
     if new not in ALLOWED_STATUSES:

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./venv/Scripts/alembic init alembic)",
+      "Bash(python -m alembic upgrade head)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
