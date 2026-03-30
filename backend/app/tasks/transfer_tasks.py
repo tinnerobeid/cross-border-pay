@@ -107,8 +107,13 @@ def process_transfer(transfer_id: int) -> dict:
         db.commit()
 
         # For real AT payouts, COMPLETED comes via webhook (/webhooks/africastalking).
-        # poll_delivery is kept as a fallback for mock / sandbox where no webhook fires.
-        poll_delivery.apply_async(args=[t.id], countdown=30)
+        # For mock/sandbox (no webhook), auto-complete via poll_delivery.
+        try:
+            poll_delivery.apply_async(args=[t.id], countdown=5)
+        except Exception:
+            # Celery not running — run poll_delivery inline (auto-completes mock transfers)
+            import threading
+            threading.Timer(5.0, poll_delivery, args=[t.id]).start()
 
         return {"ok": True, "transfer_id": t.id, "status": t.status, "provider_reference": t.provider_reference}
 

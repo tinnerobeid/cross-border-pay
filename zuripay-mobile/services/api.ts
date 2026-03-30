@@ -225,3 +225,11 @@ export async function requestPhoneChange(new_phone: string, token: string): Prom
 export async function verifyPhoneChange(otp_code: string, token: string): Promise<{ message: string; phone: string }> {
   return handleResponse(await authFetch(BASE_URL + '/auth/phone/verify', { method: 'POST', body: JSON.stringify({ otp_code }) }, token));
 }
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  return handleResponse(await apiFetch(BASE_URL + '/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }));
+}
+
+export async function resetPassword(email: string, otp_code: string, new_password: string): Promise<{ message: string }> {
+  return handleResponse(await apiFetch(BASE_URL + '/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, otp_code, new_password }) }));
+}

@@ -332,3 +332,55 @@ def verify_phone_change(
     db.commit()
 
     return {"message": "Phone number updated successfully", "phone": user.phone}
+
+
+# ── Forgot / Reset Password ────────────────────────────────────────────────────
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    otp_code: str
+    new_password: str
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Send a password-reset OTP to the user's email. Always returns 200 to avoid user enumeration."""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user and user.is_active:
+        otp_code = ''.join(random.choices(string.digits, k=6))
+        user.otp_code = otp_code
+        user.otp_expires_at = datetime.utcnow() + timedelta(minutes=15)
+        db.commit()
+        dispatch_otp(
+            email=user.email,
+            otp=otp_code,
+            phone=user.phone,
+            full_name=user.full_name,
+        )
+    return {"message": "If that email is registered, a reset code has been sent."}
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Verify OTP and set a new password."""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code.")
+    if not user.otp_code or not user.otp_expires_at:
+        raise HTTPException(status_code=400, detail="No reset code found. Please request a new one.")
+    if datetime.utcnow() > user.otp_expires_at:
+        raise HTTPException(status_code=400, detail="Reset code has expired. Please request a new one.")
+    if user.otp_code != payload.otp_code:
+        raise HTTPException(status_code=400, detail="Invalid reset code.")
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    user.hashed_password = hash_password(payload.new_password)
+    user.otp_code = None
+    user.otp_expires_at = None
+    db.commit()
+    return {"message": "Password reset successfully. You can now log in."}

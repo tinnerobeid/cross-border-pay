@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -141,6 +141,7 @@ def lookup_recipient(
 @router.post("", response_model=TransferOut)
 def create_transfer(
     payload: TransferCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -205,11 +206,20 @@ def create_transfer(
     db.add(t)
     db.commit()
     db.refresh(t)
+
+    # Try Celery first; fall back to FastAPI background thread if Celery is not running
+    celery_ok = False
     try:
         from app.tasks.transfer_tasks import process_transfer
         process_transfer.apply_async(args=[t.id])
+        celery_ok = True
     except Exception as _e:
-        logger.warning(f"Could not enqueue transfer processing task: {_e}")
+        logger.warning(f"Celery unavailable ({_e}) — using in-process background task")
+
+    if not celery_ok:
+        from app.tasks.transfer_tasks import process_transfer as _process
+        background_tasks.add_task(_process, t.id)
+
     return t
 
 

@@ -13948,3 +13948,14 @@ WHERE users.id = %(pk_1)s]
 2026-03-31 00:14:01 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
 2026-03-31 00:14:01 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
 2026-03-31 00:14:01 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:29:29 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 00:31:03 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 00:31:03 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:35:29 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 01:01:47 - app.services.notifications - INFO - OTP for mneema.frank@gmail.com: 971796
+2026-03-31 01:01:51 - app.services.notifications - INFO - OTP email sent to mneema.frank@gmail.com
+2026-03-31 01:01:52 - app.services.notifications - INFO - OTP SMS sent to +821021349069 via Africa's Talking
+2026-03-31 01:02:56 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 01:02:56 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 01:02:56 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 01:02:56 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
