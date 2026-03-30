@@ -13933,3 +13933,18 @@ WHERE users.id = %(pk_1)s]
 2026-03-28 00:06:04 - httpx - INFO - HTTP Request: GET https://api.exchangerate.host/convert?from=USD&to=KRW&amount=1&access_key=3aa5ea8b6efb7918284e9eea44e33736 "HTTP/1.1 429 Too Many Requests"
 2026-03-28 00:06:04 - app.services.pricing_engine - WARNING - exchangerate.host bad response for USD/KRW: {'success': False, 'error': {'code': 106, 'type': 'rate_limit_reached', 'info': 'You have exceeded the maximum rate limitation allowed on your subscription plan. Please refer to the "Rate Limits" section of the API Documentation for details. '}}
 2026-03-28 00:06:04 - app.services.pricing_engine - WARNING - Using hardcoded fallback rate for USD/KRW
+2026-03-29 00:43:39 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:43:09 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:48:23 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:48:28 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-30 23:48:28 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-30 23:48:28 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-30 23:48:28 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-30 23:54:52 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:55:10 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-30 23:55:10 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:13:56 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 00:14:01 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 00:14:01 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:14:01 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 00:14:01 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json

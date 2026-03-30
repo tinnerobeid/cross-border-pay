@@ -54,6 +54,7 @@ export interface Transfer {
   send_currency: string
   receive_currency: string
   send_amount: number
+  send_amount_krw: number | null
   rate_used: number
   fee_used: number
   total_payable: number
@@ -246,6 +247,30 @@ export async function getPeriodStats(token: string, from_date?: string, to_date?
   if (to_date) params.set('to_date', to_date)
   const qs = params.toString()
   return request(`/admin/stats/period${qs ? `?${qs}` : ''}`, token)
+}
+
+export async function exportTransfersCsv(token: string, filters: TransfersFilter = {}): Promise<void> {
+  const params = new URLSearchParams()
+  if (filters.status) params.set('status', filters.status)
+  if (filters.user_id !== undefined) params.set('user_id', String(filters.user_id))
+  if (filters.from_date) params.set('from_date', filters.from_date)
+  if (filters.to_date) params.set('to_date', filters.to_date)
+  const qs = params.toString()
+
+  const res = await fetch(`${BASE_URL}/admin/transfers/export${qs ? `?${qs}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`Export failed: HTTP ${res.status}`)
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `zuripay-transfers-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 export async function updateTransferStatus(

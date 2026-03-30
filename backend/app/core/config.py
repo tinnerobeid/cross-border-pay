@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     # ── Webhooks ──────────────────────────────────────────────────────────────
     WEBHOOK_SECRET: str = ""  # shared secret for HMAC webhook verification
 
+    # ── Transaction limits (per-currency JSON, 0 = unlimited) ────────────────
+    # Override in .env: DAILY_SEND_LIMIT_JSON='{"TZS": 10000000, "USD": 5000}'
+    DAILY_SEND_LIMIT_JSON: str = (
+        '{"TZS": 5000000, "KES": 200000, "USD": 2000, '
+        '"KRW": 2500000, "UGX": 7000000, "RWF": 2000000, "BIF": 4000000}'
+    )
+    MONTHLY_SEND_LIMIT_JSON: str = (
+        '{"TZS": 20000000, "KES": 800000, "USD": 8000, '
+        '"KRW": 10000000, "UGX": 28000000, "RWF": 8000000, "BIF": 16000000}'
+    )
+
     # Environment
     ENVIRONMENT: str = "development"
 

@@ -21,6 +21,7 @@ class TransferOut(BaseModel):
     send_currency: str
     receive_currency: str
     send_amount: float
+    send_amount_krw: float | None = None   # computed: send_amount converted to KRW
     rate_used: float | None
     fee_used: float | None
     zuripay_fee: float | None

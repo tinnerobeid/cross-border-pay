@@ -1,4 +1,7 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import datetime
 from decimal import Decimal
@@ -11,7 +14,51 @@ from app.models.wallet import Wallet
 from app.schemas.transfer import TransferCreate, TransferOut
 from app.services.pricing_engine import PricingEngine
 from app.services.routing_service import choose_provider
+from app.core.config import settings
 from app.core.logger import logger
+
+
+_EXCLUDED_STATUSES = {"CANCELLED", "FAILED"}
+
+
+def _check_limits(db: Session, user_id: int, currency: str, new_amount: Decimal) -> None:
+    """Raise 429 if adding new_amount would breach the user's daily or monthly limit."""
+    currency = currency.upper()
+    now = datetime.utcnow()
+
+    daily_limits: dict = json.loads(settings.DAILY_SEND_LIMIT_JSON)
+    monthly_limits: dict = json.loads(settings.MONTHLY_SEND_LIMIT_JSON)
+
+    def _spent(since: datetime) -> Decimal:
+        total = (
+            db.query(func.sum(Transfer.send_amount))
+            .filter(
+                Transfer.user_id == user_id,
+                Transfer.send_currency == currency,
+                Transfer.status.notin_(_EXCLUDED_STATUSES),
+                Transfer.created_at >= since,
+            )
+            .scalar()
+        )
+        return Decimal(str(total or 0))
+
+    daily_limit = daily_limits.get(currency)
+    if daily_limit:
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        if _spent(start_of_day) + new_amount > Decimal(str(daily_limit)):
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily transfer limit of {int(daily_limit):,} {currency} reached. Try again tomorrow.",
+            )
+
+    monthly_limit = monthly_limits.get(currency)
+    if monthly_limit:
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if _spent(start_of_month) + new_amount > Decimal(str(monthly_limit)):
+            raise HTTPException(
+                status_code=429,
+                detail=f"Monthly transfer limit of {int(monthly_limit):,} {currency} reached.",
+            )
 
 
 def _is_linked_phone(db: Session, phone: str) -> bool:
@@ -24,6 +71,55 @@ def _is_linked_phone(db: Session, phone: str) -> bool:
 router = APIRouter(prefix="/transfers", tags=["Transfers"])
 
 _engine = PricingEngine(quote_ttl_seconds=300)
+
+
+@router.get("/limits", response_model=dict)
+def get_my_limits(
+    currency: str = Query(..., description="Currency code, e.g. TZS"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return how much the user has sent today/this month and what the limits are."""
+    currency = currency.upper()
+    now = datetime.utcnow()
+
+    daily_limits: dict = json.loads(settings.DAILY_SEND_LIMIT_JSON)
+    monthly_limits: dict = json.loads(settings.MONTHLY_SEND_LIMIT_JSON)
+
+    def _spent(since: datetime) -> float:
+        total = (
+            db.query(func.sum(Transfer.send_amount))
+            .filter(
+                Transfer.user_id == user.id,
+                Transfer.send_currency == currency,
+                Transfer.status.notin_(_EXCLUDED_STATUSES),
+                Transfer.created_at >= since,
+            )
+            .scalar()
+        )
+        return float(total or 0)
+
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    daily_limit = daily_limits.get(currency)
+    monthly_limit = monthly_limits.get(currency)
+    daily_spent = _spent(start_of_day)
+    monthly_spent = _spent(start_of_month)
+
+    return {
+        "currency": currency,
+        "daily": {
+            "limit": daily_limit,
+            "spent": daily_spent,
+            "remaining": max(0, (daily_limit or 0) - daily_spent) if daily_limit else None,
+        },
+        "monthly": {
+            "limit": monthly_limit,
+            "spent": monthly_spent,
+            "remaining": max(0, (monthly_limit or 0) - monthly_spent) if monthly_limit else None,
+        },
+    }
 
 
 @router.get("/lookup", response_model=dict)
@@ -60,6 +156,9 @@ def create_transfer(
         is_linked_recipient=is_linked,
     )
     provider = choose_provider(payload.send_country, payload.receive_country)
+
+    # Enforce per-user daily/monthly send limits
+    _check_limits(db, user.id, payload.send_currency, Decimal(str(payload.send_amount)))
 
     is_domestic = payload.send_currency.upper() == payload.receive_currency.upper()
     if is_domestic and is_linked:
