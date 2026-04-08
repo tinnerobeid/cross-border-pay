@@ -13933,3 +13933,475 @@ WHERE users.id = %(pk_1)s]
 2026-03-28 00:06:04 - httpx - INFO - HTTP Request: GET https://api.exchangerate.host/convert?from=USD&to=KRW&amount=1&access_key=3aa5ea8b6efb7918284e9eea44e33736 "HTTP/1.1 429 Too Many Requests"
 2026-03-28 00:06:04 - app.services.pricing_engine - WARNING - exchangerate.host bad response for USD/KRW: {'success': False, 'error': {'code': 106, 'type': 'rate_limit_reached', 'info': 'You have exceeded the maximum rate limitation allowed on your subscription plan. Please refer to the "Rate Limits" section of the API Documentation for details. '}}
 2026-03-28 00:06:04 - app.services.pricing_engine - WARNING - Using hardcoded fallback rate for USD/KRW
+2026-03-29 00:43:39 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:43:09 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:48:23 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:48:28 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-30 23:48:28 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-30 23:48:28 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-30 23:48:28 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-30 23:54:52 - app.main - INFO - slowapi rate limiting enabled
+2026-03-30 23:55:10 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-30 23:55:10 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:13:56 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 00:14:01 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 00:14:01 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:14:01 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 00:14:01 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:29:29 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 00:31:03 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 00:31:03 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 00:35:29 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 01:01:47 - app.services.notifications - INFO - OTP for mneema.frank@gmail.com: 971796
+2026-03-31 01:01:51 - app.services.notifications - INFO - OTP email sent to mneema.frank@gmail.com
+2026-03-31 01:01:52 - app.services.notifications - INFO - OTP SMS sent to +821021349069 via Africa's Talking
+2026-03-31 01:02:56 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 01:02:56 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 01:02:56 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 01:02:56 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 19:23:08 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 20:19:33 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 20:19:33 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 20:19:33 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 20:19:33 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 20:21:16 - app.services.notifications - INFO - OTP for godfreybaraka001@gmail.com: 936234
+2026-03-31 20:21:19 - app.services.notifications - INFO - OTP email sent to godfreybaraka001@gmail.com
+2026-03-31 20:21:20 - app.services.notifications - INFO - OTP SMS sent to +255742434540 via Africa's Talking
+2026-03-31 20:40:46 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 20:41:48 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 20:45:42 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 20:46:51 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 20:56:51 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 20:58:49 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:11:11 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:13:42 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:22:44 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:23:43 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:30:45 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:31:36 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:51:17 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 21:53:45 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:07:06 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:07:11 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:07:37 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:07:37 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:07:37 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:07:37 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:08:15 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:08:23 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:08:23 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:08:23 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:08:23 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:09:12 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:09:14 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:10:22 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:12:01 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:12:04 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:12:06 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:12:13 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:12:13 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:12:13 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:12:13 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:12:18 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:12:18 - app.main - ERROR - Unhandled error on /wallets/8/deposit: NameError: name 'logger' is not defined
+Traceback (most recent call last):
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 214, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\concurrency.py", line 39, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\app\api\wallets.py", line 136, in deposit_from_linked_account
+    logger.warning("AT checkout failed for wallet %d — falling back to direct credit", wallet.id)
+    ^^^^^^
+NameError: name 'logger' is not defined
+2026-03-31 22:12:26 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:12:26 - app.main - ERROR - Unhandled error on /wallets/8/deposit: NameError: name 'logger' is not defined
+Traceback (most recent call last):
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 214, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\concurrency.py", line 39, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\app\api\wallets.py", line 136, in deposit_from_linked_account
+    logger.warning("AT checkout failed for wallet %d — falling back to direct credit", wallet.id)
+    ^^^^^^
+NameError: name 'logger' is not defined
+2026-03-31 22:13:15 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:14:39 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:14:39 - app.api.wallets - WARNING - AT checkout failed for wallet 8 — falling back to direct credit
+2026-03-31 22:14:43 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:14:43 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:16:04 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:16:04 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:16:04 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:16:04 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:16:07 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:16:08 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:16:08 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:16:08 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:16:08 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:16:08 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:16:08 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:16:08 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:16:08 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:18:05 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:18:06 - app.services.payment_providers - ERROR - AT C2B request failed [wallet 8]: HTTPSConnectionPool(host='payments.sandbox.africastalking.com', port=443): Max retries exceeded with url: /mobile/checkout/request (Caused by NameResolutionError("HTTPSConnection(host='payments.sandbox.africastalking.com', port=443): Failed to resolve 'payments.sandbox.africastalking.com' ([Errno 11001] getaddrinfo failed)"))
+2026-03-31 22:18:06 - app.api.wallets - WARNING - AT checkout failed for wallet 8 — falling back to direct credit
+2026-03-31 22:18:07 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:18:07 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:19:25 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:22:35 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:23:22 - app.main - INFO - slowapi rate limiting enabled
+2026-03-31 22:23:24 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:23:24 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:23:24 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:23:24 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:29:34 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:29:34 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-03-31 22:29:34 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-03-31 22:29:34 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-01 12:48:40 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 12:49:38 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 12:50:05 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 12:52:06 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 12:52:19 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-01 12:52:19 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-01 12:52:19 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-01 12:52:19 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-01 12:58:38 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 12:59:46 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 13:00:46 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 13:02:52 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 13:05:28 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 13:06:05 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 13:06:28 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 13:07:03 - app.main - INFO - slowapi rate limiting enabled
+2026-04-01 13:09:47 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-01 13:09:47 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-01 13:09:47 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-01 13:09:47 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-06 23:56:02 - app.main - INFO - slowapi rate limiting enabled
+2026-04-09 00:12:37 - app.main - INFO - slowapi rate limiting enabled
+2026-04-09 00:13:42 - app.main - INFO - slowapi rate limiting enabled
+2026-04-09 00:14:50 - app.main - ERROR - Unhandled error on /admin/transfers: ProgrammingError: (psycopg2.errors.UndefinedColumn) column transfers.halisi_fee does not exist
+LINE 2: ...e_used, transfers.fee_used AS transfers_fee_used, transfers....
+                                                             ^
+
+[SQL: SELECT count(*) AS count_1 
+FROM (SELECT transfers.id AS transfers_id, transfers.user_id AS transfers_user_id, transfers.send_amount AS transfers_send_amount, transfers.send_currency AS transfers_send_currency, transfers.send_country AS transfers_send_country, transfers.receive_currency AS transfers_receive_currency, transfers.receive_country AS transfers_receive_country, transfers.receive_amount AS transfers_receive_amount, transfers.recipient_name AS transfers_recipient_name, transfers.recipient_phone AS transfers_recipient_phone, transfers.provider AS transfers_provider, transfers.rate_used AS transfers_rate_used, transfers.fee_used AS transfers_fee_used, transfers.halisi_fee AS transfers_halisi_fee, transfers.transfer_type AS transfers_transfer_type, transfers.total_payable AS transfers_total_payable, transfers.priced_at AS transfers_priced_at, transfers.status AS transfers_status, transfers.fail_reason AS transfers_fail_reason, transfers.provider_reference AS transfers_provider_reference, transfers.created_at AS transfers_created_at, transfers.updated_at AS transfers_updated_at 
+FROM transfers) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column transfers.halisi_fee does not exist
+LINE 2: ...e_used, transfers.fee_used AS transfers_fee_used, transfers....
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 214, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\concurrency.py", line 39, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\app\api\admin.py", line 427, in list_transfers
+    total = q.count()
+            ^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 3113, in count
+    self._legacy_from_self(col).enable_eagerloads(False).scalar()
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2805, in scalar
+    ret = self.one()
+          ^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2778, in one
+    return self._iter().one()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2247, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\context.py", line 305, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1418, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 515, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1640, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column transfers.halisi_fee does not exist
+LINE 2: ...e_used, transfers.fee_used AS transfers_fee_used, transfers....
+                                                             ^
+
+[SQL: SELECT count(*) AS count_1 
+FROM (SELECT transfers.id AS transfers_id, transfers.user_id AS transfers_user_id, transfers.send_amount AS transfers_send_amount, transfers.send_currency AS transfers_send_currency, transfers.send_country AS transfers_send_country, transfers.receive_currency AS transfers_receive_currency, transfers.receive_country AS transfers_receive_country, transfers.receive_amount AS transfers_receive_amount, transfers.recipient_name AS transfers_recipient_name, transfers.recipient_phone AS transfers_recipient_phone, transfers.provider AS transfers_provider, transfers.rate_used AS transfers_rate_used, transfers.fee_used AS transfers_fee_used, transfers.halisi_fee AS transfers_halisi_fee, transfers.transfer_type AS transfers_transfer_type, transfers.total_payable AS transfers_total_payable, transfers.priced_at AS transfers_priced_at, transfers.status AS transfers_status, transfers.fail_reason AS transfers_fail_reason, transfers.provider_reference AS transfers_provider_reference, transfers.created_at AS transfers_created_at, transfers.updated_at AS transfers_updated_at 
+FROM transfers) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-09 00:14:50 - app.main - ERROR - Unhandled error on /admin/transfers: ProgrammingError: (psycopg2.errors.UndefinedColumn) column transfers.halisi_fee does not exist
+LINE 2: ...e_used, transfers.fee_used AS transfers_fee_used, transfers....
+                                                             ^
+
+[SQL: SELECT count(*) AS count_1 
+FROM (SELECT transfers.id AS transfers_id, transfers.user_id AS transfers_user_id, transfers.send_amount AS transfers_send_amount, transfers.send_currency AS transfers_send_currency, transfers.send_country AS transfers_send_country, transfers.receive_currency AS transfers_receive_currency, transfers.receive_country AS transfers_receive_country, transfers.receive_amount AS transfers_receive_amount, transfers.recipient_name AS transfers_recipient_name, transfers.recipient_phone AS transfers_recipient_phone, transfers.provider AS transfers_provider, transfers.rate_used AS transfers_rate_used, transfers.fee_used AS transfers_fee_used, transfers.halisi_fee AS transfers_halisi_fee, transfers.transfer_type AS transfers_transfer_type, transfers.total_payable AS transfers_total_payable, transfers.priced_at AS transfers_priced_at, transfers.status AS transfers_status, transfers.fail_reason AS transfers_fail_reason, transfers.provider_reference AS transfers_provider_reference, transfers.created_at AS transfers_created_at, transfers.updated_at AS transfers_updated_at 
+FROM transfers) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column transfers.halisi_fee does not exist
+LINE 2: ...e_used, transfers.fee_used AS transfers_fee_used, transfers....
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\fastapi\routing.py", line 214, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\starlette\concurrency.py", line 39, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\app\api\admin.py", line 427, in list_transfers
+    total = q.count()
+            ^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 3113, in count
+    self._legacy_from_self(col).enable_eagerloads(False).scalar()
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2805, in scalar
+    ret = self.one()
+          ^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2778, in one
+    return self._iter().one()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2247, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\orm\context.py", line 305, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1418, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 515, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1640, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\Hp\Documents\cross-border-pay\backend\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column transfers.halisi_fee does not exist
+LINE 2: ...e_used, transfers.fee_used AS transfers_fee_used, transfers....
+                                                             ^
+
+[SQL: SELECT count(*) AS count_1 
+FROM (SELECT transfers.id AS transfers_id, transfers.user_id AS transfers_user_id, transfers.send_amount AS transfers_send_amount, transfers.send_currency AS transfers_send_currency, transfers.send_country AS transfers_send_country, transfers.receive_currency AS transfers_receive_currency, transfers.receive_country AS transfers_receive_country, transfers.receive_amount AS transfers_receive_amount, transfers.recipient_name AS transfers_recipient_name, transfers.recipient_phone AS transfers_recipient_phone, transfers.provider AS transfers_provider, transfers.rate_used AS transfers_rate_used, transfers.fee_used AS transfers_fee_used, transfers.halisi_fee AS transfers_halisi_fee, transfers.transfer_type AS transfers_transfer_type, transfers.total_payable AS transfers_total_payable, transfers.priced_at AS transfers_priced_at, transfers.status AS transfers_status, transfers.fail_reason AS transfers_fail_reason, transfers.provider_reference AS transfers_provider_reference, transfers.created_at AS transfers_created_at, transfers.updated_at AS transfers_updated_at 
+FROM transfers) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-09 00:14:50 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-09 00:14:50 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-09 00:16:41 - app.main - INFO - slowapi rate limiting enabled
+2026-04-09 00:16:45 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-09 00:16:45 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-09 00:16:45 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-09 00:16:45 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-09 00:22:15 - app.main - INFO - slowapi rate limiting enabled
+2026-04-09 00:47:42 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-09 00:47:42 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json
+2026-04-09 00:47:42 - httpx - INFO - HTTP Request: GET https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json "HTTP/1.1 200 OK"
+2026-04-09 00:47:42 - app.services.pricing_engine - INFO - Bulk FX: fetched 7 rates from https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { getTransfers, getPeriodStats, updateTransferStatus, Transfer, PeriodStats, getToken } from '../api'
+import { getTransfers, getPeriodStats, updateTransferStatus, exportTransfersCsv, Transfer, PeriodStats, getToken, TransfersFilter } from '../api'
 import Badge, { statusVariant } from '../components/Badge'
 
 const TRANSITIONS: Record<string, string[]> = {
@@ -17,7 +17,11 @@ const TRANSITIONS: Record<string, string[]> = {
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
 function toISO(d: Date) {
-  return d.toISOString().slice(0, 10)
+  // Use local calendar date, not UTC — avoids timezone-shift on date boundaries
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 function today() { return toISO(new Date()) }
@@ -107,6 +111,9 @@ function TransferRow({ t, onUpdate }: { t: Transfer; onUpdate: (updated: Transfe
       </td>
       <td className="td">
         <p className="font-semibold text-slate-800">{t.send_currency} {t.send_amount.toLocaleString()}</p>
+        {t.send_currency !== 'KRW' && t.send_amount_krw != null && (
+          <p className="text-xs text-slate-400">≈ ₩{t.send_amount_krw.toLocaleString()}</p>
+        )}
         <p className="text-xs text-emerald-600">→ {t.receive_currency} {(t.receive_amount || 0).toLocaleString()}</p>
         {(t.fee_used ?? 0) > 0 ? (
           <p className="text-xs font-semibold text-violet-600 mt-0.5">
@@ -169,6 +176,7 @@ export default function Transfers() {
   const [periodStats, setPeriodStats] = useState<PeriodStats | null>(null)
   const [statsLoading, setStatsLoading] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
 
   // Filters
@@ -225,6 +233,22 @@ export default function Transfers() {
     loadAll(statusFilter, dates)
   }
 
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const filters: TransfersFilter = {
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(activeDates?.from ? { from_date: activeDates.from } : {}),
+        ...(activeDates?.to ? { to_date: activeDates.to } : {}),
+      }
+      await exportTransfersCsv(token, filters)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Export failed')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   function handleSearch(v: string) {
     setSearch(v)
     clearTimeout(debounceRef.current)
@@ -249,6 +273,16 @@ export default function Transfers() {
           <h2 className="text-xl font-bold text-slate-800">Transfers</h2>
           <span className="badge bg-slate-100 text-slate-600">{visible.length}</span>
         </div>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="btn-primary text-sm py-2 px-4 flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          {exporting ? 'Exporting…' : 'Download CSV'}
+        </button>
       </div>
 
       {/* Date range presets */}
@@ -311,14 +345,14 @@ export default function Transfers() {
         <div className="card p-4">
           <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Total Volume</p>
           <p className="text-2xl font-bold text-slate-800 mt-1">
-            {statsLoading ? '—' : (periodStats?.total_volume ?? 0).toLocaleString()}
+            {statsLoading ? '—' : `₩${(periodStats?.total_volume ?? 0).toLocaleString()}`}
           </p>
           <p className="text-xs text-slate-400">all transfers · {periodLabel}</p>
         </div>
         <div className="card p-4 border-violet-200 bg-violet-50">
           <p className="text-xs text-violet-600 font-medium uppercase tracking-wide">Fees Earned</p>
           <p className="text-2xl font-bold text-violet-700 mt-1">
-            {statsLoading ? '—' : (periodStats?.total_fees ?? 0).toLocaleString()}
+            {statsLoading ? '—' : `₩${(periodStats?.total_fees ?? 0).toLocaleString()}`}
           </p>
           <p className="text-xs text-violet-400">successful transfers · {periodLabel}</p>
         </div>

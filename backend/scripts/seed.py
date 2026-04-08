@@ -31,7 +31,7 @@ def seed_database():
     
     try:
         # Check if data already exists
-        existing_user = db.query(User).filter(User.email == "admin@zuripay.com").first()
+        existing_user = db.query(User).filter(User.email == "admin@halisi.com").first()
         if existing_user:
             print("Database already seeded. Skipping...")
             return
@@ -58,8 +58,8 @@ def seed_database():
         )
 
         admin = User(
-            email="admin@zuripay.com",
-            full_name="ZuriPay Admin",
+            email="admin@halisi.com",
+            full_name="Halisi Admin",
             hashed_password=hash_password("Admin@2024!"),
             role="admin",
             is_active=True,
@@ -106,7 +106,7 @@ def seed_database():
         print("\n Test Credentials:")
         print("  User 1: user@example.com / Test@1234")
         print("  User 2: jane@example.com / Test@1234")
-        print("  Admin:  admin@zuripay.com / Admin@2024!")
+        print("  Admin:  admin@halisi.com / Admin@2024!")
         
     except Exception as e:
         print(f" Error seeding database: {str(e)}")

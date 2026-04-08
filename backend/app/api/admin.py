@@ -1,4 +1,8 @@
+import csv
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, date, timedelta, time
@@ -117,12 +121,25 @@ def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin
         .scalar() or 0
     )
 
-    volume_today = (
-        db.query(func.sum(Transfer.send_amount))
+    # Volume and fees — convert each transfer's currency to KRW then sum
+    from app.services.pricing_engine import get_rate
+
+    def _to_krw_sum(rows) -> float:
+        """rows: list of (send_currency, amount)"""
+        return sum(
+            float(amount or 0) * float(get_rate(currency, "KRW"))
+            for currency, amount in rows
+            if amount
+        )
+
+    volume_today = _to_krw_sum(
+        db.query(Transfer.send_currency, Transfer.send_amount)
         .filter(Transfer.created_at >= today_start, Transfer.created_at < tomorrow_start)
-        .scalar() or 0
+        .all()
     )
-    volume_total = db.query(func.sum(Transfer.send_amount)).scalar() or 0
+    volume_total = _to_krw_sum(
+        db.query(Transfer.send_currency, Transfer.send_amount).all()
+    )
 
     failed_transfers = (
         db.query(func.count(Transfer.id))
@@ -139,19 +156,19 @@ def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin
     # "received" and "SENT" are also successful terminal/in-flight states.
     SUCCESSFUL = ("COMPLETED", "received", "SENT")
 
-    total_fees_earned = (
-        db.query(func.sum(Transfer.fee_used))
+    total_fees_earned = _to_krw_sum(
+        db.query(Transfer.send_currency, Transfer.fee_used)
         .filter(Transfer.status.in_(SUCCESSFUL))
-        .scalar() or 0
+        .all()
     )
-    fees_earned_today = (
-        db.query(func.sum(Transfer.fee_used))
+    fees_earned_today = _to_krw_sum(
+        db.query(Transfer.send_currency, Transfer.fee_used)
         .filter(
             Transfer.status.in_(SUCCESSFUL),
             Transfer.created_at >= today_start,
             Transfer.created_at < tomorrow_start,
         )
-        .scalar() or 0
+        .all()
     )
 
     return StatsOut(
@@ -162,12 +179,12 @@ def get_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin
         approved_kyc=approved_kyc,
         total_transfers=total_transfers,
         transfers_today=transfers_today,
-        volume_today=float(volume_today),
-        volume_total=float(volume_total),
+        volume_today=round(volume_today),
+        volume_total=round(volume_total),
         failed_transfers=failed_transfers,
         cancelled_transfers=cancelled_transfers,
-        total_fees_earned=float(total_fees_earned),
-        fees_earned_today=float(fees_earned_today),
+        total_fees_earned=round(total_fees_earned),
+        fees_earned_today=round(fees_earned_today),
     )
 
 
@@ -188,6 +205,15 @@ def get_period_stats(
             q = q.filter(Transfer.created_at < datetime.combine(to_date + timedelta(days=1), time.min))
         return q
 
+    from app.services.pricing_engine import get_rate as _get_rate
+
+    def _period_to_krw(rows) -> float:
+        return sum(
+            float(amount or 0) * float(_get_rate(currency, "KRW"))
+            for currency, amount in rows
+            if amount
+        )
+
     SUCCESSFUL = ("COMPLETED", "received", "SENT")
 
     transfer_count = _apply_date_filter(db.query(func.count(Transfer.id))).scalar() or 0
@@ -196,16 +222,15 @@ def get_period_stats(
         .filter(Transfer.status.in_(SUCCESSFUL))
         .scalar() or 0
     )
-    # Volume = all transfers in period (shows total attempted, not just successful)
-    total_volume = (
-        _apply_date_filter(db.query(func.sum(Transfer.send_amount)))
-        .scalar() or 0
+    total_volume = _period_to_krw(
+        _apply_date_filter(
+            db.query(Transfer.send_currency, Transfer.send_amount)
+        ).all()
     )
-    # Fees = only successful transfers (fees are refunded on failure)
-    total_fees = (
-        _apply_date_filter(db.query(func.sum(Transfer.fee_used)))
-        .filter(Transfer.status.in_(SUCCESSFUL))
-        .scalar() or 0
+    total_fees = _period_to_krw(
+        _apply_date_filter(
+            db.query(Transfer.send_currency, Transfer.fee_used)
+        ).filter(Transfer.status.in_(SUCCESSFUL)).all()
     )
 
     return PeriodStatsOut(
@@ -213,8 +238,8 @@ def get_period_stats(
         to_date=to_date,
         transfer_count=transfer_count,
         completed_count=completed_count,
-        total_volume=float(total_volume),
-        total_fees=float(total_fees),
+        total_volume=round(total_volume),
+        total_fees=round(total_fees),
     )
 
 
@@ -403,7 +428,73 @@ def list_transfers(
     items = q.order_by(Transfer.id.desc()).offset(skip).limit(limit).all()
     response.headers["X-Total-Count"] = str(total)
     response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
-    return items
+
+    from app.services.pricing_engine import get_rate as _get_rate
+    from app.schemas.transfer import TransferOut as _TransferOut
+    result = []
+    for t in items:
+        out = _TransferOut.model_validate(t)
+        if t.send_currency.upper() != "KRW" and t.send_amount:
+            out.send_amount_krw = round(float(t.send_amount) * float(_get_rate(t.send_currency, "KRW")))
+        else:
+            out.send_amount_krw = float(t.send_amount or 0)
+        result.append(out)
+    return result
+
+
+@router.get("/transfers/export")
+def export_transfers_csv(
+    status: str | None = None,
+    user_id: int | None = None,
+    from_date: date | None = Query(None, description="Start date inclusive (YYYY-MM-DD)"),
+    to_date: date | None = Query(None, description="End date inclusive (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Download all matching transfers as a CSV file."""
+    q = db.query(Transfer)
+    if status:
+        q = q.filter(Transfer.status == status)
+    if user_id:
+        q = q.filter(Transfer.user_id == user_id)
+    if from_date:
+        q = q.filter(Transfer.created_at >= datetime.combine(from_date, time.min))
+    if to_date:
+        q = q.filter(Transfer.created_at < datetime.combine(to_date + timedelta(days=1), time.min))
+    transfers = q.order_by(Transfer.id.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Status", "Recipient Name", "Recipient Phone",
+        "Send Currency", "Send Amount", "Receive Currency", "Receive Amount",
+        "Fee", "Rate", "Transfer Type", "Provider", "Fail Reason", "Created At",
+    ])
+    for t in transfers:
+        writer.writerow([
+            f"ZP-{t.id}",
+            t.status,
+            t.recipient_name,
+            t.recipient_phone,
+            t.send_currency,
+            float(t.send_amount or 0),
+            t.receive_currency,
+            float(t.receive_amount or 0),
+            float(t.fee_used or 0),
+            float(t.rate_used or 0),
+            t.transfer_type or "",
+            t.provider or "",
+            t.fail_reason or "",
+            t.created_at.strftime("%Y-%m-%d %H:%M:%S") if t.created_at else "",
+        ])
+
+    output.seek(0)
+    filename = f"halisi-transfers-{datetime.utcnow().strftime('%Y%m%d')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.patch("/transfers/{transfer_id}/status", response_model=TransferOut)

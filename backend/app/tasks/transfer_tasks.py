@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -12,6 +12,9 @@ from app.models.kyc import KYCProfile
 from app.models.wallet import Wallet
 from app.models.user import User
 from app.services.notifications import dispatch_transfer_completed, dispatch_transfer_failed
+
+# Transfers stuck in PROCESSING or SENT longer than this are reconciled
+_STUCK_THRESHOLD_MINUTES = 30
 
 
 def _db() -> Session:
@@ -104,8 +107,13 @@ def process_transfer(transfer_id: int) -> dict:
         db.commit()
 
         # For real AT payouts, COMPLETED comes via webhook (/webhooks/africastalking).
-        # poll_delivery is kept as a fallback for mock / sandbox where no webhook fires.
-        poll_delivery.apply_async(args=[t.id], countdown=30)
+        # For mock/sandbox (no webhook), auto-complete via poll_delivery.
+        try:
+            poll_delivery.apply_async(args=[t.id], countdown=5)
+        except Exception:
+            # Celery not running — run poll_delivery inline (auto-completes mock transfers)
+            import threading
+            threading.Timer(5.0, poll_delivery, args=[t.id]).start()
 
         return {"ok": True, "transfer_id": t.id, "status": t.status, "provider_reference": t.provider_reference}
 
@@ -136,6 +144,182 @@ def process_transfer(transfer_id: int) -> dict:
     finally:
         db.close()
 
+
+@celery_app.task(name="transfers.reconcile_stuck")
+def reconcile_stuck_transfers() -> dict:
+    """
+    Periodic reconciliation task — runs every 15 minutes via Celery beat.
+
+    Finds transfers stuck in PROCESSING or SENT for more than
+    _STUCK_THRESHOLD_MINUTES and attempts to resolve them:
+
+    - PROCESSING (no provider response yet): re-trigger the payout.
+    - SENT (payout was accepted but no webhook arrived): query AT for
+      the transaction status and apply the result. Falls back to marking
+      FAILED + refund when AT is not configured (mock/sandbox environment).
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    db = _db()
+    cutoff = datetime.utcnow() - timedelta(minutes=_STUCK_THRESHOLD_MINUTES)
+    resolved = 0
+    errors = 0
+
+    try:
+        stuck = (
+            db.query(Transfer)
+            .filter(
+                Transfer.status.in_(("PROCESSING", "SENT")),
+                Transfer.updated_at <= cutoff,
+            )
+            .all()
+        )
+
+        if not stuck:
+            return {"ok": True, "checked": 0, "resolved": 0}
+
+        logger.info("reconcile_stuck: found %d stuck transfer(s)", len(stuck))
+
+        from app.services.payment_providers import _at_configured
+        at_ok = _at_configured()
+
+        for t in stuck:
+            try:
+                age_mins = (datetime.utcnow() - t.updated_at).total_seconds() / 60
+                logger.warning(
+                    "reconcile_stuck: transfer %d stuck in %s for %.0f min",
+                    t.id, t.status, age_mins,
+                )
+
+                if t.status == "PROCESSING":
+                    # No provider reference yet — re-trigger payout
+                    from app.services.payment_providers import initiate_b2c_payout
+                    result = initiate_b2c_payout(
+                        phone=t.recipient_phone,
+                        currency=t.receive_currency,
+                        amount=float(t.receive_amount or t.send_amount),
+                        transfer_id=t.id,
+                    )
+                    t.provider_reference = result["provider_reference"]
+                    if result["status"] == "FAILED":
+                        _refund_wallet(db, t)
+                        t.status = "FAILED"
+                        t.fail_reason = "Reconciliation: provider rejected re-attempt"
+                        user = db.get(User, t.user_id)
+                        if user:
+                            dispatch_transfer_failed(
+                                email=user.email, full_name=user.full_name,
+                                phone=user.phone, transfer_id=t.id,
+                                send_amount=str(t.send_amount),
+                                send_currency=t.send_currency,
+                                reason=t.fail_reason,
+                            )
+                    else:
+                        t.status = "SENT"
+                    db.commit()
+                    resolved += 1
+
+                elif t.status == "SENT":
+                    if at_ok and t.provider_reference:
+                        # Query AT for the real transaction status
+                        import requests as _req
+                        from app.core.config import settings
+                        headers = {
+                            "Accept": "application/json",
+                            "apiKey": settings.AT_API_KEY,
+                        }
+                        base = (
+                            "https://payments.sandbox.africastalking.com"
+                            if settings.AT_USERNAME == "sandbox"
+                            else "https://payments.africastalking.com"
+                        )
+                        resp = _req.get(
+                            f"{base}/query/transaction/find",
+                            params={
+                                "username": settings.AT_USERNAME,
+                                "transactionId": t.provider_reference,
+                            },
+                            headers=headers,
+                            timeout=15,
+                        )
+                        data = resp.json()
+                        at_status = (
+                            (data.get("status") or "")
+                            .upper()
+                            .replace(" ", "_")
+                        )
+                        logger.info(
+                            "reconcile_stuck: AT query for %s → %s",
+                            t.provider_reference, at_status,
+                        )
+
+                        if at_status in ("SUCCESS", "COMPLETED"):
+                            t.status = "COMPLETED"
+                            db.commit()
+                            user = db.get(User, t.user_id)
+                            if user:
+                                dispatch_transfer_completed(
+                                    email=user.email, full_name=user.full_name,
+                                    phone=user.phone, transfer_id=t.id,
+                                    send_amount=str(t.send_amount),
+                                    send_currency=t.send_currency,
+                                    receive_amount=str(t.receive_amount or ""),
+                                    receive_currency=t.receive_currency,
+                                    recipient_name=t.recipient_name,
+                                    reference=t.provider_reference or f"TXN-{t.id}",
+                                )
+                            resolved += 1
+                        elif at_status in ("FAILED", "REJECTED", "INVALID_REQUEST"):
+                            _refund_wallet(db, t)
+                            t.status = "FAILED"
+                            t.fail_reason = f"Reconciliation: AT status {at_status}"
+                            db.commit()
+                            user = db.get(User, t.user_id)
+                            if user:
+                                dispatch_transfer_failed(
+                                    email=user.email, full_name=user.full_name,
+                                    phone=user.phone, transfer_id=t.id,
+                                    send_amount=str(t.send_amount),
+                                    send_currency=t.send_currency,
+                                    reason=t.fail_reason,
+                                )
+                            resolved += 1
+                        else:
+                            # Still pending at AT — log and wait for next cycle
+                            logger.info(
+                                "reconcile_stuck: transfer %d AT status '%s' — waiting",
+                                t.id, at_status,
+                            )
+                    else:
+                        # No AT config or no reference — fail and refund after threshold
+                        _refund_wallet(db, t)
+                        t.status = "FAILED"
+                        t.fail_reason = "Reconciliation: no webhook received within threshold"
+                        db.commit()
+                        user = db.get(User, t.user_id)
+                        if user:
+                            dispatch_transfer_failed(
+                                email=user.email, full_name=user.full_name,
+                                phone=user.phone, transfer_id=t.id,
+                                send_amount=str(t.send_amount),
+                                send_currency=t.send_currency,
+                                reason=t.fail_reason,
+                            )
+                        resolved += 1
+
+            except Exception as exc:
+                logger.error("reconcile_stuck: error processing transfer %d: %s", t.id, exc)
+                db.rollback()
+                errors += 1
+
+        return {"ok": True, "checked": len(stuck), "resolved": resolved, "errors": errors}
+
+    except Exception as exc:
+        logger.error("reconcile_stuck: unexpected error: %s", exc)
+        return {"ok": False, "error": str(exc)}
+    finally:
+        db.close()
 
 @celery_app.task(name="transfers.poll_delivery")
 def poll_delivery(transfer_id: int) -> dict:

@@ -74,7 +74,7 @@ def initiate_b2c_payout(
         logger.warning("AT credentials not configured — using mock payout for transfer %d", transfer_id)
         return _mock_payout(transfer_id)
 
-    product = settings.AT_PRODUCT_NAME or "ZuriPay"
+    product = settings.AT_PRODUCT_NAME or "Halisi"
     payload = {
         "username": settings.AT_USERNAME,
         "productName": product,
@@ -135,7 +135,7 @@ def initiate_c2b_checkout(
         logger.warning("AT credentials not configured — using mock collection for wallet %d", wallet_id)
         return _mock_collection(wallet_id)
 
-    product = settings.AT_PRODUCT_NAME or "ZuriPay"
+    product = settings.AT_PRODUCT_NAME or "Halisi"
     payload = {
         "username": settings.AT_USERNAME,
         "productName": product,

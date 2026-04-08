@@ -1,4 +1,4 @@
-"""Gunicorn configuration for ZuriPay production deployment.
+"""Gunicorn configuration for Halisi production deployment.
 
 Usage:
   gunicorn app.main:app -c gunicorn.conf.py

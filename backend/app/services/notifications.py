@@ -27,7 +27,7 @@ _EMAIL_HTML = """
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;margin:0;padding:40px 16px;">
   <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
     <div style="background:#1e40af;padding:28px 32px;">
-      <p style="color:#fff;font-size:22px;font-weight:700;margin:0;">ZuriPay</p>
+      <p style="color:#fff;font-size:22px;font-weight:700;margin:0;">Halisi</p>
       <p style="color:#bfdbfe;font-size:13px;margin:4px 0 0;">Cross-Border Payments</p>
     </div>
     <div style="padding:32px;">
@@ -42,7 +42,7 @@ _EMAIL_HTML = """
       </p>
     </div>
     <div style="background:#f8fafc;padding:16px 32px;border-top:1px solid #e2e8f0;">
-      <p style="color:#cbd5e1;font-size:11px;margin:0;text-align:center;">ZuriPay &copy; {year} · Secure cross-border payments</p>
+      <p style="color:#cbd5e1;font-size:11px;margin:0;text-align:center;">Halisi &copy; {year} · Secure cross-border payments</p>
     </div>
   </div>
 </body>
@@ -59,16 +59,16 @@ def send_otp_email(to_email: str, otp: str, full_name: str = "") -> bool:
     from datetime import datetime
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"{otp} is your ZuriPay verification code"
+        msg["Subject"] = f"{otp} is your Halisi verification code"
         msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
         msg["To"] = to_email
 
         greeting = f"Hi {full_name}," if full_name else "Hi,"
         text_body = (
             f"{greeting}\n\n"
-            f"Your ZuriPay verification code is: {otp}\n\n"
+            f"Your Halisi verification code is: {otp}\n\n"
             f"This code expires in 10 minutes. Never share it with anyone.\n\n"
-            f"— ZuriPay Team"
+            f"— Halisi Team"
         )
         html_body = _EMAIL_HTML.format(otp=otp, year=datetime.utcnow().year)
 
@@ -112,7 +112,7 @@ def send_otp_sms(to_phone: str, otp: str) -> bool:
         # Sandbox doesn't support custom sender IDs — only use in production
         sender = None if settings.AT_USERNAME.lower() == "sandbox" else (settings.AT_SENDER_ID or None)
         response = sms.send(
-            message=f"Your ZuriPay code is: {otp}. Expires in 10 min. Never share this.",
+            message=f"Your Halisi code is: {otp}. Expires in 10 min. Never share this.",
             recipients=[to_phone],
             sender_id=sender,
         )
@@ -140,7 +140,7 @@ _TRANSFER_COMPLETED_HTML = """
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;margin:0;padding:40px 16px;">
   <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
     <div style="background:#15803d;padding:28px 32px;">
-      <p style="color:#fff;font-size:22px;font-weight:700;margin:0;">ZuriPay</p>
+      <p style="color:#fff;font-size:22px;font-weight:700;margin:0;">Halisi</p>
       <p style="color:#bbf7d0;font-size:13px;margin:4px 0 0;">Transfer Completed</p>
     </div>
     <div style="padding:32px;">
@@ -156,11 +156,11 @@ _TRANSFER_COMPLETED_HTML = """
         </table>
       </div>
       <p style="color:#94a3b8;font-size:12px;margin:20px 0 0;text-align:center;">
-        Thank you for using ZuriPay. Keep your reference number for your records.
+        Thank you for using Halisi. Keep your reference number for your records.
       </p>
     </div>
     <div style="background:#f8fafc;padding:16px 32px;border-top:1px solid #e2e8f0;">
-      <p style="color:#cbd5e1;font-size:11px;margin:0;text-align:center;">ZuriPay &copy; {year} · Secure cross-border payments</p>
+      <p style="color:#cbd5e1;font-size:11px;margin:0;text-align:center;">Halisi &copy; {year} · Secure cross-border payments</p>
     </div>
   </div>
 </body>
@@ -174,7 +174,7 @@ _TRANSFER_FAILED_HTML = """
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;margin:0;padding:40px 16px;">
   <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
     <div style="background:#b91c1c;padding:28px 32px;">
-      <p style="color:#fff;font-size:22px;font-weight:700;margin:0;">ZuriPay</p>
+      <p style="color:#fff;font-size:22px;font-weight:700;margin:0;">Halisi</p>
       <p style="color:#fecaca;font-size:13px;margin:4px 0 0;">Transfer Failed</p>
     </div>
     <div style="padding:32px;">
@@ -192,7 +192,7 @@ _TRANSFER_FAILED_HTML = """
       </p>
     </div>
     <div style="background:#f8fafc;padding:16px 32px;border-top:1px solid #e2e8f0;">
-      <p style="color:#cbd5e1;font-size:11px;margin:0;text-align:center;">ZuriPay &copy; {year} · Secure cross-border payments</p>
+      <p style="color:#cbd5e1;font-size:11px;margin:0;text-align:center;">Halisi &copy; {year} · Secure cross-border payments</p>
     </div>
   </div>
 </body>
@@ -218,7 +218,7 @@ def send_transfer_completed_email(
     from datetime import datetime
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"ZuriPay: Transfer #{transfer_id} completed"
+        msg["Subject"] = f"Halisi: Transfer #{transfer_id} completed"
         msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
         msg["To"] = to_email
 
@@ -230,7 +230,7 @@ def send_transfer_completed_email(
             f"Recipient receives: {receive_amount} {receive_currency}\n"
             f"Recipient: {recipient_name}\n"
             f"Reference: {reference}\n\n"
-            f"Thank you for using ZuriPay.\n— ZuriPay Team"
+            f"Thank you for using Halisi.\n— Halisi Team"
         )
         html_body = _TRANSFER_COMPLETED_HTML.format(
             name=full_name,
@@ -276,7 +276,7 @@ def send_transfer_failed_email(
     from datetime import datetime
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"ZuriPay: Transfer #{transfer_id} failed"
+        msg["Subject"] = f"Halisi: Transfer #{transfer_id} failed"
         msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
         msg["To"] = to_email
 
@@ -287,7 +287,7 @@ def send_transfer_failed_email(
             f"Transfer ID: #{transfer_id}\n"
             f"Amount: {send_amount} {send_currency}\n"
             f"Reason: {reason}\n\n"
-            f"Please try again or contact support if the issue persists.\n— ZuriPay Team"
+            f"Please try again or contact support if the issue persists.\n— Halisi Team"
         )
         html_body = _TRANSFER_FAILED_HTML.format(
             name=full_name,
@@ -349,7 +349,7 @@ def dispatch_transfer_completed(
             sender = None if settings.AT_USERNAME.lower() == "sandbox" else (settings.AT_SENDER_ID or None)
             africastalking.SMS.send(
                 message=(
-                    f"ZuriPay: Transfer #{transfer_id} completed. "
+                    f"Halisi: Transfer #{transfer_id} completed. "
                     f"{recipient_name} receives {receive_amount} {receive_currency}. "
                     f"Ref: {reference}"
                 ),
@@ -389,7 +389,7 @@ def dispatch_transfer_failed(
             sender = None if settings.AT_USERNAME.lower() == "sandbox" else (settings.AT_SENDER_ID or None)
             africastalking.SMS.send(
                 message=(
-                    f"ZuriPay: Transfer #{transfer_id} failed. "
+                    f"Halisi: Transfer #{transfer_id} failed. "
                     f"Reason: {reason}. "
                     f"Your funds have been refunded."
                 ),

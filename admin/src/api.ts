@@ -54,6 +54,7 @@ export interface Transfer {
   send_currency: string
   receive_currency: string
   send_amount: number
+  send_amount_krw: number | null
   rate_used: number
   fee_used: number
   total_payable: number
@@ -75,7 +76,7 @@ export interface Rate {
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 export function getToken(): string | null {
-  return localStorage.getItem('zuripay_admin_token')
+  return localStorage.getItem('halisi_admin_token')
 }
 
 async function request<T>(
@@ -92,7 +93,7 @@ async function request<T>(
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
 
   if (res.status === 401) {
-    localStorage.removeItem('zuripay_admin_token')
+    localStorage.removeItem('halisi_admin_token')
     window.location.href = '/login'
     throw new Error('Session expired')
   }
@@ -246,6 +247,30 @@ export async function getPeriodStats(token: string, from_date?: string, to_date?
   if (to_date) params.set('to_date', to_date)
   const qs = params.toString()
   return request(`/admin/stats/period${qs ? `?${qs}` : ''}`, token)
+}
+
+export async function exportTransfersCsv(token: string, filters: TransfersFilter = {}): Promise<void> {
+  const params = new URLSearchParams()
+  if (filters.status) params.set('status', filters.status)
+  if (filters.user_id !== undefined) params.set('user_id', String(filters.user_id))
+  if (filters.from_date) params.set('from_date', filters.from_date)
+  if (filters.to_date) params.set('to_date', filters.to_date)
+  const qs = params.toString()
+
+  const res = await fetch(`${BASE_URL}/admin/transfers/export${qs ? `?${qs}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`Export failed: HTTP ${res.status}`)
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `halisi-transfers-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 export async function updateTransferStatus(

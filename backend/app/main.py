@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.database import Base, engine
 import logging
@@ -15,10 +16,8 @@ from app.api.wallets import router as wallets_router
 from app.api.linked_accounts import router as linked_accounts_router
 from app.api.webhooks import router as webhooks_router
 
-from app.models import user, kyc, transfer  # noqa: F401
+from app.models import user, kyc, transfer, quote  # noqa: F401
 from app.models import recipient, wallet, linked_account  # noqa: F401
-
-from fastapi.middleware.cors import CORSMiddleware
 
 try:
     from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -36,6 +35,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title=settings.APP_NAME)
+
+# Add CORS middleware FIRST — before exception handlers so headers are present on all responses
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if _SLOWAPI:
     limiter = Limiter(key_func=get_remote_address, default_limits=["300/minute"])
@@ -58,20 +66,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Global exception handler for general exceptions
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled error on {request.url.path}: {str(exc)}", exc_info=True)
-    return JSONResponse(
+    logger.error(f"Unhandled error on {request.url.path}: {type(exc).__name__}: {str(exc)}", exc_info=True)
+    response = JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error"},
+        content={"detail": f"{type(exc).__name__}: {str(exc)}"},
     )
-
-# Add CORS middleware BEFORE routes
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 # Create DB tables
 Base.metadata.create_all(bind=engine, checkfirst=True)

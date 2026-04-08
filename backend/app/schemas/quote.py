@@ -20,7 +20,7 @@ class QuoteResponse(BaseModel):
     exchange_fee: float        # exchange/conversion fee component
     receive_amount: float
     total_cost: float          # send_amount + fee_amount
-    zuripay_fee: float
+    halisi_fee: float
     transfer_type: str         # "international" | "domestic_free" | "domestic"
     expires_at: datetime
     status: str

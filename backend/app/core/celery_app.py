@@ -9,13 +9,22 @@ CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Celery application instance that the CLI will look for
 celery = Celery(
-    "zuripay",
+    "halisi",
     broker=CELERY_BROKER_URL,
     backend=CELERY_RESULT_BACKEND,
 )
 
 # Autodiscover tasks in app.tasks.*
 celery.autodiscover_tasks(["app.tasks"])
+
+# Periodic tasks (requires celery beat worker)
+celery.conf.beat_schedule = {
+    "reconcile-stuck-transfers-every-15min": {
+        "task": "transfers.reconcile_stuck",
+        "schedule": 60 * 15,   # every 15 minutes
+    },
+}
+celery.conf.timezone = "UTC"
 
 # Optional alias, if other code imports celery_app
 celery_app = celery

@@ -34,7 +34,7 @@ const pageTitles: Record<string, string> = {
 
 function getAdminEmail() {
   try {
-    const token = localStorage.getItem('zuripay_admin_token')
+    const token = localStorage.getItem('halisi_admin_token')
     if (!token) return 'admin'
     const payload = JSON.parse(atob(token.split('.')[1]))
     return payload.sub || payload.email || 'admin'
@@ -53,7 +53,7 @@ export default function Layout() {
   )?.[1] ?? 'Admin'
 
   function handleLogout() {
-    localStorage.removeItem('zuripay_admin_token')
+    localStorage.removeItem('halisi_admin_token')
     navigate('/login')
   }
 
@@ -76,10 +76,10 @@ export default function Layout() {
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-            Z
+            H
           </div>
           <div>
-            <p className="text-white font-bold text-sm leading-tight">ZuriPay</p>
+            <p className="text-white font-bold text-sm leading-tight">Halisi</p>
             <p className="text-slate-400 text-xs">Operations Center</p>
           </div>
         </div>
