@@ -42,9 +42,9 @@ export default function LoginScreen() {
           <Ionicons name="wallet-outline" size={28} color={Colors.primary} />
         </View>
 
-        <Text style={styles.brand}>Zuri Pay</Text>
+        <Text style={styles.brand}>Halisi</Text>
         <Text style={styles.heading}>Welcome Back</Text>
-        <Text style={styles.subheading}>Securely login to your Zuri Pay account</Text>
+        <Text style={styles.subheading}>Securely login to your Halisi account</Text>
 
         <AppInput
           label="Email or Phone Number"

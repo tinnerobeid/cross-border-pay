@@ -26,8 +26,8 @@ export default function SuccessScreen() {
     try {
       await Share.share({
         message: [
-          '--- ZuriPay Transfer Receipt ---',
-          `Transaction ID: #ZP-${transferId}`,
+          '--- Halisi Transfer Receipt ---',
+          `Transaction ID: #HL-${transferId}`,
           `Date: ${createdAt}`,
           `Status: ${status}`,
           `Recipient: ${recipientName}`,
@@ -35,9 +35,9 @@ export default function SuccessScreen() {
           `Exchange Rate: 1 ${sendCurrency} = ${Number(fxRate).toFixed(4)} ${receiveCurrency}`,
           `Recipient Receives: ${Number(receiveAmount).toLocaleString()} ${receiveCurrency}`,
           '',
-          'Secured by ZuriPay',
+          'Secured by Halisi',
         ].join('\n'),
-        title: `ZuriPay Receipt #ZP-${transferId}`,
+        title: `Halisi Receipt #HL-${transferId}`,
       });
     } catch (e: any) {
       Alert.alert('Share failed', e.message);
@@ -67,14 +67,14 @@ export default function SuccessScreen() {
           <Text style={styles.amountCardLabel}>TOTAL AMOUNT SENT</Text>
           <Text style={styles.amountCardValue}>{Number(sendAmount).toLocaleString()} {sendCurrency}</Text>
           <View style={styles.instantBadge}>
-            <Text style={styles.instantBadgeText}>ZuriPay Transfer</Text>
+            <Text style={styles.instantBadgeText}>Halisi Transfer</Text>
           </View>
         </View>
 
         <View style={styles.detailsSection}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Transaction ID</Text>
-            <Text style={styles.detailValue}>#ZP-{transferId}</Text>
+            <Text style={styles.detailValue}>#HL-{transferId}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Date & Time</Text>
@@ -101,7 +101,7 @@ export default function SuccessScreen() {
         <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/(tabs)/home')}>
           <Text style={styles.secondaryBtnText}>Done</Text>
         </TouchableOpacity>
-        <Text style={styles.footerText}>Secured by Zuri Pay</Text>
+        <Text style={styles.footerText}>Secured by Halisi</Text>
       </ScrollView>
     </SafeAreaView>
   );

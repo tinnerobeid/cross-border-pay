@@ -11,7 +11,7 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false)
 
   useEffect(() => {
-    if (localStorage.getItem('zuripay_admin_token')) navigate('/dashboard', { replace: true })
+    if (localStorage.getItem('halisi_admin_token')) navigate('/dashboard', { replace: true })
   }, [navigate])
 
   async function handleSubmit(e: FormEvent) {
@@ -20,7 +20,7 @@ export default function Login() {
     setLoading(true)
     try {
       const { access_token } = await login(email, password)
-      localStorage.setItem('zuripay_admin_token', access_token)
+      localStorage.setItem('halisi_admin_token', access_token)
       navigate('/dashboard', { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed. Check your credentials.')
@@ -34,8 +34,8 @@ export default function Login() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 bg-slate-900 p-12">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">Z</div>
-          <span className="text-white font-bold text-lg">ZuriPay</span>
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">H</div>
+          <span className="text-white font-bold text-lg">Halisi</span>
         </div>
         <div>
           <h2 className="text-white text-4xl font-bold leading-tight mb-4">
@@ -60,8 +60,8 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">Z</div>
-            <span className="font-bold text-xl text-slate-800">ZuriPay</span>
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">H</div>
+            <span className="font-bold text-xl text-slate-800">Halisi</span>
           </div>
 
           <div className="mb-8">
@@ -86,7 +86,7 @@ export default function Login() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="input-field"
-                placeholder="admin@zuripay.com"
+                placeholder="admin@halisi.com"
                 required
                 autoComplete="email"
                 disabled={loading}

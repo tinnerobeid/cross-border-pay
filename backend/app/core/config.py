@@ -8,9 +8,9 @@ class Settings(BaseSettings):
         case_sensitive=True
     )
 
-    APP_NAME: str = "Zuripay API"
+    APP_NAME: str = "Halisi API"
     # PostgreSQL connection string
-    DATABASE_URL: str = "postgresql+psycopg2://zuripay:zuripay@localhost:5432/zuripay"
+    DATABASE_URL: str = "postgresql+psycopg2://halisi_user:halisi@localhost:5432/halisi"
 
     JWT_SECRET_KEY: str = "change-me-in-prod-use-strong-random-key"
     JWT_ALGORITHM: str = "HS256"
@@ -26,13 +26,13 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = ""          # your Gmail address
     SMTP_PASSWORD: str = ""      # Gmail App Password (not your login password)
-    EMAIL_FROM_NAME: str = "ZuriPay"
+    EMAIL_FROM_NAME: str = "Halisi"
 
     # ── SMS (Africa's Talking) ────────────────────────────────────────────────
     AT_USERNAME: str = ""          # your Africa's Talking username
     AT_API_KEY: str = ""           # your API key from the dashboard
-    AT_SENDER_ID: str = "ZuriPay" # optional shortcode/sender name
-    AT_PRODUCT_NAME: str = "ZuriPay"  # AT Payments product name
+    AT_SENDER_ID: str = "Halisi" # optional shortcode/sender name
+    AT_PRODUCT_NAME: str = "Halisi"  # AT Payments product name
 
     # ── Webhooks ──────────────────────────────────────────────────────────────
     WEBHOOK_SECRET: str = ""  # shared secret for HMAC webhook verification

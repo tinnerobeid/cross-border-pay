@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserOut, getCurrentUser } from '../services/api';
 
-const TOKEN_KEY = 'zuripay_token';
+const TOKEN_KEY = 'halisi_token';
 
 interface AuthContextType {
   token: string | null;
@@ -24,12 +24,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const stored = await AsyncStorage.getItem(TOKEN_KEY);
         if (!stored) return;
-        // Validate the token is still accepted by the server
-        const me = await getCurrentUser(stored);
+        // Trust the stored token without a network round-trip; individual
+        // API calls will fail with 401 if it has expired, at which point
+        // clearAuth() should be called.
         setToken(stored);
-        setUser(me);
+        // Fetch the user profile in the background — don't block startup.
+        getCurrentUser(stored)
+          .then((me) => setUser(me))
+          .catch(async () => {
+            await AsyncStorage.removeItem(TOKEN_KEY);
+            setToken(null);
+            setUser(null);
+          });
       } catch {
-        // Token expired or invalid — clear it so the user sees the login screen
         await AsyncStorage.removeItem(TOKEN_KEY);
       } finally {
         setIsLoading(false);

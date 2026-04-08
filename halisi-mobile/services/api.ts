@@ -20,14 +20,14 @@ export interface TransferCreate {
 export interface TransferOut {
   id: number; user_id: number; send_country: string; receive_country: string;
   send_currency: string; receive_currency: string; send_amount: number;
-  rate_used: number | null; fee_used: number | null; zuripay_fee: number | null;
+  rate_used: number | null; fee_used: number | null; halisi_fee: number | null;
   transfer_type: string | null; total_payable: number | null;
   receive_amount: number | null; recipient_name: string; recipient_phone: string;
   provider: string; status: string; fail_reason: string | null; created_at: string;
 }
 
 export interface QuoteRequest { send_country: string; receive_country: string; send_currency: string; receive_currency: string; send_amount: number; is_linked_recipient?: boolean }
-export interface QuoteResponse { id: number; send_amount: number; fx_rate: number; fee_amount: number; transfer_fee: number; exchange_fee: number; receive_amount: number; total_cost: number; zuripay_fee: number; transfer_type: string; expires_at: string; status: string }
+export interface QuoteResponse { id: number; send_amount: number; fx_rate: number; fee_amount: number; transfer_fee: number; exchange_fee: number; receive_amount: number; total_cost: number; halisi_fee: number; transfer_type: string; expires_at: string; status: string }
 
 export interface KYCOut { id: number; user_id: number; status: string; country: string; id_type: string; id_number: string; review_note: string | null }
 

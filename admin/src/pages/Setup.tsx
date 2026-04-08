@@ -13,7 +13,7 @@ export default function Setup() {
 
   useEffect(() => {
     // If already logged in, go to dashboard
-    if (localStorage.getItem('zuripay_admin_token')) {
+    if (localStorage.getItem('halisi_admin_token')) {
       navigate('/dashboard', { replace: true })
       return
     }
@@ -40,7 +40,7 @@ export default function Setup() {
         phone: form.phone || undefined,
         password: form.password,
       })
-      localStorage.setItem('zuripay_admin_token', access_token)
+      localStorage.setItem('halisi_admin_token', access_token)
       navigate('/dashboard', { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Setup failed')
@@ -79,8 +79,8 @@ export default function Setup() {
       {/* Left branding panel */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 bg-slate-900 p-12">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">Z</div>
-          <span className="text-white font-bold text-lg">ZuriPay</span>
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">H</div>
+          <span className="text-white font-bold text-lg">Halisi</span>
         </div>
         <div>
           <div className="inline-flex items-center gap-2 bg-blue-600/20 text-blue-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
@@ -88,21 +88,21 @@ export default function Setup() {
             First-Time Setup
           </div>
           <h2 className="text-white text-4xl font-bold leading-tight mb-4">
-            Welcome to<br />ZuriPay Admin.
+            Welcome to<br />Halisi Admin.
           </h2>
           <p className="text-slate-400 text-base">
             Create your admin account to get started. This setup screen will disappear after the first admin is created.
           </p>
         </div>
-        <p className="text-slate-600 text-xs">ZuriPay Operations Center · Secure Setup</p>
+        <p className="text-slate-600 text-xs">Halisi Operations Center · Secure Setup</p>
       </div>
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center bg-slate-50 p-8">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">Z</div>
-            <span className="font-bold text-xl text-slate-800">ZuriPay Setup</span>
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">H</div>
+            <span className="font-bold text-xl text-slate-800">Halisi Setup</span>
           </div>
 
           <div className="mb-8">
@@ -128,7 +128,7 @@ export default function Setup() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
               <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
-                className="input-field" placeholder="admin@zuripay.com" required disabled={loading} />
+                className="input-field" placeholder="admin@halisi.com" required disabled={loading} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone <span className="text-slate-400 font-normal">(optional)</span></label>

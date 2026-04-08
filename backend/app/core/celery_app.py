@@ -9,7 +9,7 @@ CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Celery application instance that the CLI will look for
 celery = Celery(
-    "zuripay",
+    "halisi",
     broker=CELERY_BROKER_URL,
     backend=CELERY_RESULT_BACKEND,
 )

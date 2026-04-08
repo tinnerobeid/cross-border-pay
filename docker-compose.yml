@@ -5,15 +5,15 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: zuripay
-      POSTGRES_USER: zuripay
-      POSTGRES_PASSWORD: zuripay
+      POSTGRES_DB: halisi
+      POSTGRES_USER: halisi
+      POSTGRES_PASSWORD: halisi
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zuripay"]
+      test: ["CMD-SHELL", "pg_isready -U halisi"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,7 +36,7 @@ services:
     env_file: ./backend/.env
     environment:
       # Override .env values so Docker service hostnames are used
-      DATABASE_URL: postgresql+psycopg2://zuripay:zuripay@postgres:5432/zuripay
+      DATABASE_URL: postgresql+psycopg2://halisi:halisi@postgres:5432/halisi
       REDIS_URL: redis://redis:6379/0
     volumes:
       - storage_data:/app/storage
@@ -55,7 +55,7 @@ services:
     command: celery -A app.core.celery_app worker --loglevel=info
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://zuripay:zuripay@postgres:5432/zuripay
+      DATABASE_URL: postgresql+psycopg2://halisi:halisi@postgres:5432/halisi
       REDIS_URL: redis://redis:6379/0
     volumes:
       - storage_data:/app/storage
@@ -74,7 +74,7 @@ services:
     command: celery -A app.core.celery_app beat --loglevel=info
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://zuripay:zuripay@postgres:5432/zuripay
+      DATABASE_URL: postgresql+psycopg2://halisi:halisi@postgres:5432/halisi
       REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(./venv/Scripts/alembic init alembic)",
       "Bash(python -m alembic upgrade head)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(venv/Scripts/pip install:*)"
     ]
   }
 }

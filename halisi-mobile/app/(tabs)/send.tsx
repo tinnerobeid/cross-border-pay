@@ -302,7 +302,7 @@ export default function SendScreen() {
           <Text style={styles.primaryBtnText}>Review Transfer</Text>
           <Ionicons name="arrow-forward" size={18} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.secureText}>Secure transaction powered by Zuri Pay</Text>
+        <Text style={styles.secureText}>Secure transaction powered by Halisi</Text>
       </ScrollView>
 
       <CurrencyPickerModal

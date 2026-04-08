@@ -88,7 +88,7 @@ export default function ProfileScreen() {
 
 
   const handleTerms = () => {
-    Alert.alert('Terms & Conditions', 'Our full T&C are available at zuripay.com/terms');
+    Alert.alert('Terms & Conditions', 'Our full T&C are available at halisi.com/terms');
   };
 
   const initials = user?.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() ?? '?';

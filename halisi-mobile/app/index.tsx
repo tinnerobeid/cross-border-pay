@@ -27,7 +27,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.inner}>
-        <Text style={styles.brand}>Zuri Pay</Text>
+        <Text style={styles.brand}>Halisi</Text>
 
         <View style={styles.heroCard}>
           <Image
@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
 
         <Text style={styles.title}>Global money transfers made simple</Text>
         <Text style={styles.subtitle}>
-          Send and receive money across borders instantly with ZuriPay's secure and lightning-fast platform.
+          Send and receive money across borders instantly with Halisi's secure and lightning-fast platform.
         </Text>
 
         <View style={styles.dots}>

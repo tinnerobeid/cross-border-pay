@@ -24,7 +24,7 @@ class TransferOut(BaseModel):
     send_amount_krw: float | None = None   # computed: send_amount converted to KRW
     rate_used: float | None
     fee_used: float | None
-    zuripay_fee: float | None
+    halisi_fee: float | None
     transfer_type: str | None
     total_payable: float | None
     receive_amount: float | None

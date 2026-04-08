@@ -489,7 +489,7 @@ def export_transfers_csv(
         ])
 
     output.seek(0)
-    filename = f"zuripay-transfers-{datetime.utcnow().strftime('%Y%m%d')}.csv"
+    filename = f"halisi-transfers-{datetime.utcnow().strftime('%Y%m%d')}.csv"
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",

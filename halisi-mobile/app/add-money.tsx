@@ -16,7 +16,7 @@ import {
 
 const BANK_DETAILS = {
   bankName: 'CRDB Bank Tanzania',
-  accountName: 'ZuriPay Ltd',
+  accountName: 'Halisi Ltd',
   accountNumber: '0152-199-888-800',
   branch: 'Dar es Salaam Main',
   swiftCode: 'CORUTZTZ',
@@ -266,7 +266,7 @@ export default function AddMoneyScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.mobileName}>{opt.name}</Text>
                   <Text style={styles.mobileInstructions}>
-                    Dial <Text style={styles.mobileCode}>{opt.number}</Text> → Send Money → Business → ZuriPay
+                    Dial <Text style={styles.mobileCode}>{opt.number}</Text> → Send Money → Business → Halisi
                   </Text>
                 </View>
               </View>

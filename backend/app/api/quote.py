@@ -127,7 +127,7 @@ def create_quote(
         "exchange_fee": exchange_fee,
         "receive_amount": q.receive_amount,
         "total_cost": q.total_cost,
-        "zuripay_fee": q.fee_amount,
+        "halisi_fee": q.fee_amount,
         "transfer_type": transfer_type,
         "expires_at": q.expires_at,
         "status": q.status,

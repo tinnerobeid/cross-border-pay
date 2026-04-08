@@ -204,11 +204,6 @@ def admin_login(payload: LoginRequest, db: Session = Depends(get_db)):
     return TokenResponse(access_token=token)
 
 
-@router.get("/me")
-def get_me(user: User = Depends(get_current_user)):
-    return user
-
-
 @router.delete("/me")
 def delete_account(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Soft-delete: deactivates the account."""

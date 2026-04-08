@@ -198,7 +198,7 @@ export default function LinkAccountScreen() {
         <View style={styles.infoBox}>
           <Ionicons name="shield-checkmark-outline" size={16} color={Colors.primary} />
           <Text style={styles.infoText}>
-            Your account details are encrypted and stored securely. ZuriPay never shares your banking information.
+            Your account details are encrypted and stored securely. Halisi never shares your banking information.
           </Text>
         </View>
 

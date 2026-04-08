@@ -273,7 +273,7 @@ export default function ConfirmTransferScreen() {
                 {!lookingUp && linkedUser?.is_linked && (
                   <View style={styles.linkedBadge}>
                     <Ionicons name="checkmark-circle" size={13} color="#fff" />
-                    <Text style={styles.linkedBadgeText}>ZuriPay user</Text>
+                    <Text style={styles.linkedBadgeText}>Halisi user</Text>
                   </View>
                 )}
               </View>

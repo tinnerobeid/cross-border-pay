@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "zuripay-mobile",
-    "slug": "zuripay-mobile",
+    "name": "Halisi",
+    "slug": "halisi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "zuripaymobile",
+    "scheme": "halisi",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

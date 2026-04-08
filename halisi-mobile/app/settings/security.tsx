@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 
-const BIO_KEY = 'zuripay_biometric_enabled';
+const BIO_KEY = 'halisi_biometric_enabled';
 
 function Row({
   icon, title, subtitle, trailing, onPress, danger,

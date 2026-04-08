@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '../../constants/colors';
 
-const LANG_KEY = 'zuripay_language';
+const LANG_KEY = 'halisi_language';
 
 interface Language {
   code: string;

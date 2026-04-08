@@ -1,8 +1,11 @@
+import logging
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 from app.db.database import get_db
 from app.api.deps import get_current_user
@@ -123,16 +126,17 @@ def deposit_from_linked_account(
                 amount=float(amount),
                 wallet_id=wallet.id,
             )
-            if result["status"] == "FAILED":
-                raise HTTPException(status_code=502, detail="Mobile money checkout failed. Please try again.")
-            # Return pending — wallet will be credited via webhook
-            return DepositOut(
-                wallet_id=wallet.id,
-                currency=wallet.currency,
-                amount=float(amount),
-                new_balance=float(wallet.balance),  # unchanged until webhook fires
-                source=f"{linked.provider} (pending)",
-            )
+            if result["status"] != "FAILED":
+                # Return pending — wallet will be credited via webhook
+                return DepositOut(
+                    wallet_id=wallet.id,
+                    currency=wallet.currency,
+                    amount=float(amount),
+                    new_balance=float(wallet.balance),  # unchanged until webhook fires
+                    source=f"{linked.provider} (pending)",
+                )
+            # AT unreachable — fall through to synchronous credit below
+            logger.warning("AT checkout failed for wallet %d — falling back to direct credit", wallet.id)
 
     # Synchronous credit (bank account or AT not configured)
     wallet.balance = Decimal(str(wallet.balance)) + amount

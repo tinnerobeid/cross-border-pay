@@ -143,7 +143,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.brand}>Zuri Pay</Text>
+          <Text style={styles.brand}>Halisi</Text>
           <TouchableOpacity style={styles.bell} onPress={() => router.push('/settings/notifications')}>
             <Ionicons name="notifications-outline" size={18} color={Colors.primary} />
           </TouchableOpacity>

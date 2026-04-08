@@ -76,7 +76,7 @@ export interface Rate {
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 export function getToken(): string | null {
-  return localStorage.getItem('zuripay_admin_token')
+  return localStorage.getItem('halisi_admin_token')
 }
 
 async function request<T>(
@@ -93,7 +93,7 @@ async function request<T>(
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
 
   if (res.status === 401) {
-    localStorage.removeItem('zuripay_admin_token')
+    localStorage.removeItem('halisi_admin_token')
     window.location.href = '/login'
     throw new Error('Session expired')
   }
@@ -266,7 +266,7 @@ export async function exportTransfersCsv(token: string, filters: TransfersFilter
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `zuripay-transfers-${new Date().toISOString().slice(0, 10)}.csv`
+  a.download = `halisi-transfers-${new Date().toISOString().slice(0, 10)}.csv`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)

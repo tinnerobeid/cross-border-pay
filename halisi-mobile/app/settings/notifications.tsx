@@ -53,7 +53,7 @@ export default function NotificationsScreen() {
         <Text style={styles.section}>SECURITY & ACCOUNT</Text>
         <ToggleRow title="New Logins" subtitle="Get notified whenever your account is accessed from a new device" value={newLogins} onChange={setNewLogins} />
         <ToggleRow title="Security Changes" subtitle="Alerts for PIN changes, biometric updates, or password resets" value={securityChanges} onChange={setSecurityChanges} />
-        <ToggleRow title="Account Updates" subtitle="Important news about your Zuri Pay account and policy changes" value={accountUpdates} onChange={setAccountUpdates} />
+        <ToggleRow title="Account Updates" subtitle="Important news about your Halisi account and policy changes" value={accountUpdates} onChange={setAccountUpdates} />
 
         <Text style={styles.section}>MARKETING & NEWS</Text>
         <ToggleRow title="Promotions & Offers" subtitle="Exclusive deals, cashback rewards, and partner discounts" value={offers} onChange={setOffers} />

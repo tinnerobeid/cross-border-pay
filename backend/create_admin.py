@@ -10,12 +10,12 @@ Base.metadata.create_all(bind=engine, checkfirst=True)
 db = SessionLocal()
 pwd = CryptContext(schemes=["bcrypt"])
 
-existing = db.query(User).filter(User.email == "admin@zuripay.com").first()
+existing = db.query(User).filter(User.email == "admin@halisi.com").first()
 if existing:
     print(f"Admin already exists: {existing.email}  (role={existing.role}, active={existing.is_active})")
 else:
     admin = User(
-        email="admin@zuripay.com",
+        email="admin@halisi.com",
         full_name="Admin",
         phone="+255000000000",
         hashed_password=pwd.hash("Admin@2024!"),
@@ -26,7 +26,7 @@ else:
     db.add(admin)
     db.commit()
     print("Admin created successfully!")
-    print("  Email:    admin@zuripay.com")
+    print("  Email:    admin@halisi.com")
     print("  Password: Admin@2024!")
 
 db.close()

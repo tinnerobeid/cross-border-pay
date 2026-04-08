@@ -11,6 +11,7 @@ from app.api.deps import get_current_user
 from app.models.user import User
 from app.models.transfer import Transfer
 from app.models.wallet import Wallet
+from app.models.kyc import KYCProfile
 from app.schemas.transfer import TransferCreate, TransferOut
 from app.services.pricing_engine import PricingEngine
 from app.services.routing_service import choose_provider
@@ -62,7 +63,7 @@ def _check_limits(db: Session, user_id: int, currency: str, new_amount: Decimal)
 
 
 def _is_linked_phone(db: Session, phone: str) -> bool:
-    """Return True if the given phone belongs to a registered ZuriPay user."""
+    """Return True if the given phone belongs to a registered Halisi user."""
     if not phone:
         return False
     return db.query(User).filter(User.phone == phone.strip()).first() is not None
@@ -129,8 +130,8 @@ def lookup_recipient(
     _: User = Depends(get_current_user),
 ):
     """
-    Check if a phone number belongs to a registered ZuriPay user.
-    Used by the mobile app to show 'ZuriPay user — Free transfer' badge.
+    Check if a phone number belongs to a registered Halisi user.
+    Used by the mobile app to show 'Halisi user — Free transfer' badge.
     """
     user = db.query(User).filter(User.phone == phone.strip()).first()
     if user:
@@ -145,6 +146,23 @@ def create_transfer(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    # Enforce KYC: user must have an approved KYC profile to send money
+    kyc = db.query(KYCProfile).filter(KYCProfile.user_id == user.id).first()
+    if not kyc:
+        raise HTTPException(status_code=403, detail="KYC verification required. Please complete identity verification before sending money.")
+    if kyc.status != "approved":
+        status_msg = {"pending": "Your KYC is under review. You can send money once it is approved.", "rejected": "Your KYC was rejected. Please resubmit your identity documents."}.get(kyc.status, "KYC not approved.")
+        raise HTTPException(status_code=403, detail=status_msg)
+
+    # Enforce wallet ownership: user must have a wallet in the send currency
+    wallet = db.query(Wallet).filter(Wallet.user_id == user.id, Wallet.currency == payload.send_currency.upper()).first()
+    if not wallet:
+        user_currencies = [w.currency for w in db.query(Wallet).filter(Wallet.user_id == user.id).all()]
+        raise HTTPException(
+            status_code=400,
+            detail=f"You don't have a {payload.send_currency.upper()} wallet. Your available currencies: {', '.join(user_currencies) or 'none'}.",
+        )
+
     # Auto-detect: override is_linked_recipient based on recipient phone lookup
     is_linked = _is_linked_phone(db, payload.recipient_phone) or payload.is_linked_recipient
 
@@ -193,7 +211,7 @@ def create_transfer(
         send_amount=payload.send_amount,
         rate_used=float(result.fx_rate),
         fee_used=float(result.fee_amount),
-        zuripay_fee=float(result.fee_amount),
+        halisi_fee=float(result.fee_amount),
         transfer_type=transfer_type,
         total_payable=float(result.total_cost),
         receive_amount=float(result.receive_amount),

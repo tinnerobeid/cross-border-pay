@@ -160,7 +160,7 @@ export default function RegisterScreen() {
           <Ionicons name="wallet-outline" size={28} color={Colors.primary} />
         </View>
 
-        <Text style={styles.heading}>Join Zuri Pay</Text>
+        <Text style={styles.heading}>Join Halisi</Text>
         <Text style={styles.subheading}>Start your journey to seamless payments today.</Text>
 
         <AppInput
@@ -224,7 +224,7 @@ export default function RegisterScreen() {
             {agree ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
           </View>
           <Text style={styles.checkboxText}>
-            By clicking &quot;Create Account&quot;, I agree to Zuri Pay’s{' '}
+            By clicking &quot;Create Account&quot;, I agree to Halisi’s{' '}
             <Text style={styles.link}>Terms of Service</Text> and <Text style={styles.link}>Privacy Policy</Text>.
           </Text>
         </TouchableOpacity>

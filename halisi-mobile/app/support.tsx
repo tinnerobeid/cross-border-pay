@@ -12,7 +12,7 @@ const FAQS = [
   },
   {
     q: 'What currencies are supported?',
-    a: 'ZuriPay currently supports TZS, KRW, KES, RWF, BIF, UGX, and USD. More corridors are being added regularly.',
+    a: 'Halisi currently supports TZS, KRW, KES, RWF, BIF, UGX, and USD. More corridors are being added regularly.',
   },
   {
     q: 'How long does a transfer take?',
@@ -36,7 +36,7 @@ const FAQS = [
   },
   {
     q: 'Is my money safe?',
-    a: 'Yes. ZuriPay uses bank-grade encryption for all transactions. Your funds are held in a regulated account.',
+    a: 'Yes. Halisi uses bank-grade encryption for all transactions. Your funds are held in a regulated account.',
   },
 ];
 
@@ -69,13 +69,13 @@ export default function SupportScreen() {
         <View style={styles.contactRow}>
           <TouchableOpacity
             style={styles.contactCard}
-            onPress={() => Linking.openURL('mailto:support@zuripay.com')}
+            onPress={() => Linking.openURL('mailto:support@halisi.com')}
           >
             <View style={[styles.contactIcon, { backgroundColor: '#EAF4FF' }]}>
               <Ionicons name="mail-outline" size={22} color="#1D6FAC" />
             </View>
             <Text style={styles.contactLabel}>Email Us</Text>
-            <Text style={styles.contactSub}>support@zuripay.com</Text>
+            <Text style={styles.contactSub}>support@halisi.com</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.contactCard}>
@@ -106,7 +106,7 @@ export default function SupportScreen() {
 
         <View style={styles.footer}>
           <Ionicons name="shield-checkmark-outline" size={16} color={Colors.textSecondary} />
-          <Text style={styles.footerText}>Your data is protected by ZuriPay's privacy policy</Text>
+          <Text style={styles.footerText}>Your data is protected by Halisi's privacy policy</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
